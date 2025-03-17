@@ -1,0 +1,40 @@
+name: my_project
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+  assets:
+    - assets/logo.png
+    - assets/user.png
+    - assets/naga_city.png
+    - assets/pili.png
+    - assets/siruma.png
+    - assets/caramoan.png
+    - assets/pasacao.png
+    - assets/tinambac.png
+    - assets/change.png
+    - assets/notification.png
+    - assets/privacy.png
+    - assets/dark_mode.png
+    - assets/flag.png
+    - assets/logout.png
+
+
+
