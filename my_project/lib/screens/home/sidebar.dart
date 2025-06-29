@@ -1,14 +1,6 @@
-/* Authored by: Hazel Salvador
-Company: Eleutheria Ventures
-Project: Gala
-Feature: [GAL-016] Sidebar
-Description: The Sidebar widget is a navigation drawer that provides access to various app sections and settings.
- */
-
-// The purpose of the Sidebar widget is to provide a sliding navigation menu for accessing different sections and
-// settings.
-
 import 'package:flutter/material.dart';
+// ignore: unused_import
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_project/screens/settings/settings.dart';
 
 class Sidebar extends StatelessWidget {
@@ -32,9 +24,7 @@ class Sidebar extends StatelessWidget {
           /// User Profile
           Container(
             padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 16),
-            color:
-                Theme.of(context).drawerTheme.backgroundColor ??
-                Theme.of(context).canvasColor,
+            color: Theme.of(context).drawerTheme.backgroundColor ?? Theme.of(context).canvasColor,
             child: Row(
               children: [
                 const CircleAvatar(
@@ -47,7 +37,7 @@ class Sidebar extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "User Not Found",
+                      "User  Not Found",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -127,7 +117,7 @@ class Sidebar extends StatelessWidget {
                   "Logout",
                   iconColor,
                   textColor,
-                  onLogout,
+                  onLogout, // Call the logout function
                 ),
               ],
             ),
@@ -167,11 +157,9 @@ class Sidebar extends StatelessWidget {
       case 0:
         Navigator.pushNamed(context, '/homepage');
         break;
-
-      case 4: // <-- Add this for Favorites page
+      case 4: // Favorites page
         Navigator.pushNamed(context, '/favorites');
         break;
-
       case 5:
         Navigator.pushNamed(
           context,
@@ -187,18 +175,8 @@ class Sidebar extends StatelessWidget {
           MaterialPageRoute(builder: (context) => const SettingsPage()),
         );
         break;
-
-      case 7:
-        Navigator.pushNamed(
-          context,
-          '/homepage',
-          arguments: {'username': 'your_username_here'},
-        );
-
       default:
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Feature not implemented')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Feature not implemented')));
     }
   }
 }

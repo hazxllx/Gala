@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "425703638752",
-    "project_id": "gala-main-app",
-    "storage_bucket": "gala-main-app.firebasestorage.app"
+    "project_number": "891655798621",
+    "project_id": "gala-ac239",
+    "storage_bucket": "gala-ac239.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:425703638752:android:430a36f27aedd6ffce3285",
+        "mobilesdk_app_id": "1:891655798621:android:4dc125c8ba2dd956ba32b4",
         "android_client_info": {
           "package_name": "com.example.my_project"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCN6tOnvFKEsi2Psv1rLa9Q0F_lA4HMA98"
+          "current_key": "AIzaSyBHsDPOF0fsAQn_xQlIg9dqJAKiW7gbbV0"
         }
       ],
       "services": {
