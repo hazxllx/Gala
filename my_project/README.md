@@ -1,16 +1,45 @@
-# my_project
+# Project Setup Instructions
 
-A new Flutter project.
+## 1. Install Flutter
+---
+Install Flutter by following the official installation guide:  
+👉 [https://flutter.dev/docs/get-started/install](https://flutter.dev/docs/get-started/install)
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
+After installation, verify your setup by running:
+````markdown
 
-A few resources to get you started if this is your first Flutter project:
+flutter doctor
+````
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 2. Clone Project
+
+Clone the repository and navigate into the project directory:
+
+```bash
+git clone https://your-repository-url.com
+cd your_project_directory
+```
+
+---
+
+## 3. Install Packages
+
+Retrieve all project dependencies using:
+
+```bash
+flutter pub get
+```
+
+---
+
+## 4. Run App
+
+Launch the app on a connected emulator or physical device:
+
+```bash
+flutter run
+```
+
