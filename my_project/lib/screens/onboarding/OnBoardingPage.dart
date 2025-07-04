@@ -94,7 +94,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             top: _currentPage == 1 ? 80 : null, // Slide 2 at top:60
             bottom:
                 _currentPage != 1
-                    ? 60
+                    ? 2
                     : null, // Slides 1 & 3 above bottom by 60
             left: 0,
             right: 0,

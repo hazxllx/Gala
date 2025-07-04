@@ -1,3 +1,4 @@
+// --- NO CHANGES TO IMPORTS
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,7 +8,7 @@ import 'privacy_settings_page.dart';
 import 'package:my_project/theme/theme_notifier.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({Key? key}) : super(key: key); // No parameters here
+  const SettingsPage({Key? key}) : super(key: key);
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -65,43 +66,6 @@ class _SettingsPageState extends State<SettingsPage> {
     showMessage(context, "Notifications ${value ? 'enabled' : 'disabled'}");
   }
 
-  void _showLogoutConfirmation() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Log out'),
-            content: const Text('Are you sure you want to log out?'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.clear();
-                  Navigator.of(context).pop();
-                  showMessage(context, "Logged out successfully");
-                  if (!mounted) return;
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/welcome',
-                    (route) => false,
-                  );
-                },
-                child: const Text(
-                  'Log out',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
-          ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeNotifier>(context);
@@ -109,25 +73,20 @@ class _SettingsPageState extends State<SettingsPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              height: 180,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors:
-                      isDark
-                          ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
-                          : [const Color(0xFF0A0E23), const Color(0xFF6B4E1B)],
-                  begin: Alignment.bottomLeft,
-                  end: Alignment.topRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Padding(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/bg_settings.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
+                  height: 180,
                   child: Row(
                     children: [
                       IconButton(
@@ -148,162 +107,140 @@ class _SettingsPageState extends State<SettingsPage> {
                     ],
                   ),
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            buildSection(
-              'Account',
-              [
-                SettingItem(
-                  icon: Icons.lock_outline,
-                  title: 'Change Password',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ChangePasswordPage(),
-                      ),
-                    );
-                  },
-                ),
-                SwitchSettingItem(
-                  icon: Icons.notifications_none,
-                  title: 'Notifications',
-                  value: notificationsEnabled,
-                  onChanged: _toggleNotifications,
-                ),
-                SettingItem(
-                  icon: Icons.privacy_tip_outlined,
-                  title: 'Privacy',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => PrivacySettingsPage(
-                              locationEnabled: locationEnabled,
-                              dataCollectionEnabled: dataCollectionEnabled,
-                              analyticsEnabled: analyticsEnabled,
-                              onSettingsChanged: (
-                                location,
-                                dataCollection,
-                                analytics,
-                              ) async {
-                                setState(() {
-                                  locationEnabled = location;
-                                  dataCollectionEnabled = dataCollection;
-                                  analyticsEnabled = analytics;
-                                });
-                                await _saveSetting(
-                                  'location_enabled',
-                                  location,
-                                );
-                                await _saveSetting(
-                                  'data_collection_enabled',
-                                  dataCollection,
-                                );
-                                await _saveSetting(
-                                  'analytics_enabled',
-                                  analytics,
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 40),
+                    child: Column(
+                      children: [
+                        buildSection(
+                          'Account',
+                          [
+                            SettingItem(
+                              icon: Icons.lock_outline,
+                              title: 'Change Password',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const ChangePasswordPage(),
+                                  ),
                                 );
                               },
                             ),
-                      ),
-                    );
-                  },
+                            SwitchSettingItem(
+                              icon: Icons.notifications_none,
+                              title: 'Notifications',
+                              value: notificationsEnabled,
+                              onChanged: _toggleNotifications,
+                            ),
+                            SettingItem(
+                              icon: Icons.privacy_tip_outlined,
+                              title: 'Privacy',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PrivacySettingsPage(
+                                      locationEnabled: locationEnabled,
+                                      dataCollectionEnabled: dataCollectionEnabled,
+                                      analyticsEnabled: analyticsEnabled,
+                                      onSettingsChanged: (
+                                        location,
+                                        dataCollection,
+                                        analytics,
+                                      ) async {
+                                        setState(() {
+                                          locationEnabled = location;
+                                          dataCollectionEnabled = dataCollection;
+                                          analyticsEnabled = analytics;
+                                        });
+                                        await _saveSetting('location_enabled', location);
+                                        await _saveSetting('data_collection_enabled', dataCollection);
+                                        await _saveSetting('analytics_enabled', analytics);
+                                      },
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            SettingItem(
+                              icon: Icons.store_mall_directory_outlined,
+                              title: 'Apply as a Business Owner',
+                              onTap: () {
+                                showMessage(context, "Apply flow coming soon...");
+                              },
+                            ),
+                          ],
+                          isDark,
+                          theme,
+                        ),
+                        const SizedBox(height: 16),
+                        buildSection(
+                          'Preferences',
+                          [
+                            SwitchSettingItem(
+                              icon: Icons.dark_mode_outlined,
+                              title: 'Dark Mode',
+                              value: isDark,
+                              onChanged: (val) async {
+                                themeProvider.toggleTheme();
+                                await _saveSetting('dark_mode', val);
+                                showMessage(context, "Dark mode ${val ? 'enabled' : 'disabled'}");
+                              },
+                            ),
+                          ],
+                          isDark,
+                          theme,
+                        ),
+                        const SizedBox(height: 16),
+                        buildSection(
+                          'Actions',
+                          [
+                            SettingItem(
+                              icon: Icons.flag_outlined,
+                              title: 'Report a problem',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const ReportProblemPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                          isDark,
+                          theme,
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Gala App v1.0.0',
+                          style: TextStyle(
+                            color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
-              isDark,
-              theme,
             ),
-
-            const SizedBox(height: 16),
-
-            buildSection(
-              'Preferences',
-              [
-                SwitchSettingItem(
-                  icon: Icons.dark_mode_outlined,
-                  title: 'Dark Mode',
-                  value: isDark,
-                  onChanged: (val) async {
-                    themeProvider.toggleTheme();
-                    await _saveSetting('dark_mode', val);
-                    showMessage(
-                      context,
-                      "Dark mode ${val ? 'enabled' : 'disabled'}",
-                    );
-                  },
-                ),
-              ],
-              isDark,
-              theme,
-            ),
-
-            const SizedBox(height: 16),
-
-            buildSection(
-              'Actions',
-              [
-                SettingItem(
-                  icon: Icons.flag_outlined,
-                  title: 'Report a problem',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ReportProblemPage(),
-                      ),
-                    );
-                  },
-                ),
-                SettingItem(
-                  icon: Icons.logout_outlined,
-                  title: 'Log out',
-                  titleColor: Colors.red,
-                  onTap: _showLogoutConfirmation,
-                ),
-              ],
-              isDark,
-              theme,
-            ),
-
-            const SizedBox(height: 24),
-
-            Text(
-              'Gala App v1.0.0',
-              style: TextStyle(
-                color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 40),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget buildSection(
-    String title,
-    List<Widget> items,
-    bool isDark,
-    ThemeData theme,
-  ) {
+  Widget buildSection(String title, List<Widget> items, bool isDark, ThemeData theme) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? theme.cardColor : Colors.white,
+        color: isDark ? theme.cardColor.withOpacity(0.85) : Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color:
-                isDark
-                    ? Colors.black.withOpacity(0.2)
-                    : Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -313,6 +250,7 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 8, bottom: 8),
@@ -355,8 +293,8 @@ class SettingItem extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-      leading: Icon(icon, color: theme.colorScheme.primary, size: 24),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      leading: Icon(icon, color: theme.colorScheme.primary),
       title: Text(
         title,
         style: TextStyle(
@@ -364,15 +302,14 @@ class SettingItem extends StatelessWidget {
           color: titleColor ?? (isDark ? Colors.white : Colors.black),
         ),
       ),
-      subtitle:
-          subtitle != null
-              ? Text(
-                subtitle!,
-                style: TextStyle(
-                  color: isDark ? Colors.white70 : Colors.black54,
-                ),
-              )
-              : null,
+      subtitle: subtitle != null
+          ? Text(
+              subtitle!,
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+            )
+          : null,
       trailing: Icon(
         Icons.arrow_forward_ios,
         size: 16,
@@ -403,8 +340,8 @@ class SwitchSettingItem extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-      leading: Icon(icon, color: theme.colorScheme.primary, size: 24),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      leading: Icon(icon, color: theme.colorScheme.primary),
       title: Text(
         title,
         style: TextStyle(

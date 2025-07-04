@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 
+// Onboarding & Pages
 import 'package:my_project/screens/onboarding/OnBoardingPage.dart';
 import 'package:my_project/screens/onboarding/set_location.dart';
 import 'package:my_project/screens/onboarding/allow_location_page.dart';
@@ -11,13 +12,15 @@ import 'package:my_project/screens/onboarding/find_your_place_page.dart';
 import 'package:my_project/screens/onboarding/success_page.dart';
 import 'package:my_project/screens/splash_screen.dart';
 import 'package:my_project/screens/auth/login.dart';
-import 'package:my_project/screens/auth/signup_page.dart';
-import 'package:my_project/screens/home/homepage.dart';
 import 'package:my_project/screens/profile/profile_page.dart';
 import 'package:my_project/screens/settings/settings.dart';
 import 'package:my_project/screens/favorites.dart';
 import 'package:my_project/theme/theme.dart';
 import 'package:my_project/theme/theme_notifier.dart';
+
+// Conflict-resolved imports
+import 'package:my_project/screens/auth/signup_page.dart' as auth;
+import 'package:my_project/screens/home/homepage.dart' as home;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,70 +61,71 @@ class MyApp extends StatelessWidget {
         switch (settings.name) {
           case '/':
             return MaterialPageRoute(builder: (_) => const SplashScreen());
+
           case '/login':
             return MaterialPageRoute(builder: (_) => const LoginPage());
+
           case '/signup':
-            return MaterialPageRoute(builder: (_) => SignUpPage());
+            return MaterialPageRoute(builder: (_) => auth.SignUpPage());
+
           case '/set_location':
-            return MaterialPageRoute(builder: (_) => const SetLocationPage());
+            return MaterialPageRoute(builder: (_) => SetLocationPage());
 
           case '/allow_location':
             return MaterialPageRoute(builder: (_) => const AllowLocationPage());
 
           case '/set_current_location':
-            return MaterialPageRoute(
-              builder: (_) => const SetCurrentLocationPage(),
-            );
+            return MaterialPageRoute(builder: (_) => const SetCurrentLocationPage());
+
           case '/find_your_place':
             return MaterialPageRoute(builder: (_) => FindYourPlacePage());
+
           case '/success':
             final args = settings.arguments as Map<String, dynamic>?;
             return MaterialPageRoute(
-              builder:
-                  (_) => LocationConfirmedPage(
-                    location: args?['location'] ?? 'Unknown',
-                  ),
+              builder: (_) => LocationConfirmedPage(
+                location: args?['location'] ?? 'Unknown',
+              ),
             );
 
           case '/onboarding':
             return MaterialPageRoute(
-              builder:
-                  (context) => OnboardingPage(
-                    onboardingCompleted: (ctx) async {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool('onboarding_completed', true);
-                      Navigator.pushReplacementNamed(ctx, '/set_location');
-                    },
-                  ),
+              builder: (context) => OnboardingPage(
+                onboardingCompleted: (ctx) async {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('onboarding_completed', true);
+                  Navigator.pushReplacementNamed(ctx, '/set_location');
+                },
+              ),
             );
 
           case '/homepage':
             final args = settings.arguments as Map<String, dynamic>?;
-
-            final username =
-                args != null && args.containsKey('username')
-                    ? args['username']
-                    : 'Guest';
-
+            final username = args?['username'] ?? 'Guest';
             return MaterialPageRoute(
-              builder: (_) => HomePage(username: username),
+              builder: (_) => home.HomePage(username: username),
             );
+
           case '/favorites':
             return MaterialPageRoute(builder: (_) => FavoritesPage());
 
           case '/settings':
             return MaterialPageRoute(builder: (_) => const SettingsPage());
+
           case '/profile':
             final args = settings.arguments as Map<String, dynamic>? ?? {};
             return MaterialPageRoute(
-              builder: (_) => ProfilePage(onSettingsTap: args['onSettingsTap']),
+              builder: (_) => ProfilePage(
+                onSettingsTap: args['onSettingsTap'],
+                username: '',
+              ),
             );
+
           default:
             return MaterialPageRoute(
-              builder:
-                  (_) => const Scaffold(
-                    body: Center(child: Text('404 - Page not found')),
-                  ),
+              builder: (_) => const Scaffold(
+                body: Center(child: Text('404 - Page not found')),
+              ),
             );
         }
       },

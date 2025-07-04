@@ -4,38 +4,39 @@ class LocationConfirmedPage extends StatelessWidget {
   final String location;
 
   const LocationConfirmedPage({Key? key, required this.location})
-    : super(key: key);
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      resizeToAvoidBottomInset: false, // Prevents resize on keyboard open
-      body: Container(
+      resizeToAvoidBottomInset: false,
+      body: SizedBox(
         width: double.infinity,
-        height: double.infinity, // full screen height
-        decoration: const BoxDecoration(color: Colors.white),
+        height: screenHeight,
         child: Stack(
           children: [
-            // Background image
-            Positioned.fill(
-              child: Column(
-                children: [
-                  const SizedBox(height: 150), // 👈 pushes image downward
-                  Expanded(
-                    child: Image.asset("assets/bg2.png", fit: BoxFit.cover),
-                  ),
-                ],
+            // ✅ Background image moved down
+            Positioned(
+              top: 100,
+              left: 0,
+              right: 0,
+              height: screenHeight - 100,
+              child: Image.asset(
+                "assets/bg2.png",
+                fit: BoxFit.cover,
               ),
             ),
 
-            // Blue location image
+            // ✅ Success icon
             Positioned(
-              top: MediaQuery.of(context).size.height * 0.099,
+              top: screenHeight * 0.10,
               left: MediaQuery.of(context).size.width * 0.29,
               child: Container(
                 width: 180,
                 height: 180,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   image: DecorationImage(
                     image: AssetImage("assets/success.png"),
                     fit: BoxFit.cover,
@@ -44,50 +45,45 @@ class LocationConfirmedPage extends StatelessWidget {
               ),
             ),
 
-            // Greeting
+            // ✅ Title text
             Positioned(
-              top: MediaQuery.of(context).size.height * 0.31,
+              top: screenHeight * 0.36,
               left: 0,
               right: 0,
-              child: Center(
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'Successful !',
-                        style: TextStyle(
-                          color: Color(0xFF0B55A0),
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Inter',
-                        ),
-                      ),
-                    ],
+              child: const Center(
+                child: Text(
+                  'Successful!',
+                  style: TextStyle(
+                    color: Color(0xFF0B55A0),
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Inter',
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ),
             ),
 
-            // Description
+            // ✅ Clean description text
             Positioned(
-              top: MediaQuery.of(context).size.height * 0.38,
-              left: 60,
-              right: 60,
+              top: screenHeight * 0.42,
+              left: 40,
+              right: 40,
               child: Text(
-                'Your location is set! Start exploring nearby spots and personalized recommendations now.\n\nYour location: $location',
+                'Your location is set! Start exploring nearby spots and personalized recommendations now.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.black.withOpacity(0.8),
-                  fontSize: 13,
+                  fontSize: 14,
                   fontFamily: 'Inter',
                   fontWeight: FontWeight.w500,
                   height: 1.6,
                 ),
               ),
             ),
+
+            // ✅ Button
             Positioned(
-              top: MediaQuery.of(context).size.height * 0.52,
+              top: screenHeight * 0.55,
               left: 73,
               right: 73,
               child: GestureDetector(
@@ -95,7 +91,7 @@ class LocationConfirmedPage extends StatelessWidget {
                   Navigator.pushNamed(context, '/homepage');
                 },
                 child: Container(
-                  height: 40,
+                  height: 42,
                   decoration: BoxDecoration(
                     color: const Color(0xFF0B55A0),
                     borderRadius: BorderRadius.circular(56),

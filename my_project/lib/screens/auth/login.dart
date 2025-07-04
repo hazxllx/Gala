@@ -1,12 +1,6 @@
-/* Authored by: Maria Curly Ann Lumibao
-Company: Eleutheria Ventures
-Project: Gala
-Feature: [GAL-004] Log-in page
-Description: This is where the users log-in their accounts to access the app
- */
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:my_project/screens/home/homepage.dart';
 import 'package:my_project/screens/auth/signup_page.dart';
 
@@ -47,13 +41,18 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               Container(
-                height: MediaQuery.of(context).size.height * 0.70,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
+                height: MediaQuery.of(context).size.height * 0.65,
+                padding: const EdgeInsets.fromLTRB(24, 25, 24, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    SizedBox(height: 100),
-                    Text.rich(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back,
+                          color: Colors.white, size: 28),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text.rich(
                       TextSpan(
                         children: [
                           TextSpan(
@@ -77,8 +76,8 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 16),
-                    SizedBox(
+                    const SizedBox(height: 10),
+                    const SizedBox(
                       width: 330,
                       child: Text(
                         "Log in to plan your trips, find top-rated places, and get real-time navigation.",
@@ -126,7 +125,8 @@ class _LoginPageState extends State<LoginPage> {
                         labelText: "Email address",
                         labelStyle: const TextStyle(fontSize: 15),
                         prefixIcon: const Icon(Icons.email_outlined),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16, horizontal: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -142,16 +142,17 @@ class _LoginPageState extends State<LoginPage> {
                         labelStyle: const TextStyle(fontSize: 15),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                          ),
+                          icon: Icon(_obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility),
                           onPressed: () {
                             setState(() {
                               _obscurePassword = !_obscurePassword;
                             });
                           },
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16, horizontal: 10),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -162,54 +163,27 @@ class _LoginPageState extends State<LoginPage> {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () {},
-                        child: const Text("Forget password?", style: TextStyle(color: Colors.blue)),
+                        child: const Text("Forget password?",
+                            style: TextStyle(color: Colors.blue)),
                       ),
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () async {
-                          setState(() => _isLoading = true);
-                          try {
-                            await _auth.signInWithEmailAndPassword(
-                              email: emailController.text.trim(),
-                              password: passwordController.text.trim(),
-                            );
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => HomePage(username: emailController.text.trim()),
-                              ),
-                            );
-                          } on FirebaseAuthException catch (e) {
-                            String message;
-                            switch (e.code) {
-                              case 'user-not-found':
-                                message = 'No user found for that email.';
-                                break;
-                              case 'wrong-password':
-                                message = 'Wrong password provided.';
-                                break;
-                              default:
-                                message = 'Login failed. Please try again.';
-                            }
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(message), backgroundColor: Colors.red),
-                            );
-                          } finally {
-                            setState(() => _isLoading = false);
-                          }
-                        },
+                        onPressed: _isLoading ? null : _loginUser,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(255, 0, 71, 165),
+                          backgroundColor:
+                              const Color.fromARGB(255, 0, 71, 165),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
                             : const Text(
                                 "LOGIN",
                                 style: TextStyle(
@@ -244,7 +218,8 @@ class _LoginPageState extends State<LoginPage> {
                         onPressed: () async {
                           await googleSignIn(context);
                         },
-                        icon: Image.asset('assets/google_icon.png', height: 24),
+                        icon:
+                            Image.asset('assets/google_icon.png', height: 24),
                         label: const Text(
                           "Google",
                           style: TextStyle(
@@ -296,6 +271,54 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Future<void> _loginUser() async {
+    setState(() => _isLoading = true);
+    try {
+      final email = emailController.text.trim();
+      final password = passwordController.text.trim();
+
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final uid = userCredential.user!.uid;
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+      final data = userDoc.data();
+      final firstName = data?['firstName'] ?? 'Explorer';
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePage(username: firstName),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message;
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'No user found for that email.';
+          break;
+        case 'wrong-password':
+          message = 'Wrong password provided.';
+          break;
+        default:
+          message = 'Login failed. Please try again.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unexpected error: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> googleSignIn(BuildContext context) async {
     setState(() => _isLoading = true);
     try {
@@ -303,7 +326,8 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => HomePage(username: emailController.text),
+          builder: (context) =>
+              HomePage(username: emailController.text.split('@').first),
         ),
       );
     } catch (e) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'success_page.dart';
 
 class AllowLocationPage extends StatefulWidget {
@@ -14,14 +15,12 @@ class _AllowLocationPageState extends State<AllowLocationPage> {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Check if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       _showSnackBar("Location services are disabled.");
       return;
     }
 
-    // Check permission status
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -36,25 +35,27 @@ class _AllowLocationPageState extends State<AllowLocationPage> {
       return;
     }
 
-    // Permissions granted, get location
     try {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      final locationString = "${position.latitude}, ${position.longitude}";
+      // ✅ Confirm it's not mocked/faked
+      if (position.isMocked) {
+        _showSnackBar("Fake/mock location detected. Please use a real device.");
+        return;
+      }
 
-      print("Latitude: ${position.latitude}, Longitude: ${position.longitude}");
+      String readableAddress = await _getAddressFromCoordinates(position);
 
-      _showSnackBar("Location: $locationString");
+      _showSnackBar("Location: $readableAddress");
 
-      // Navigate to success page with the location string
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder:
-                (context) => LocationConfirmedPage(location: locationString),
+            builder: (context) =>
+                LocationConfirmedPage(location: readableAddress),
           ),
         );
       }
@@ -63,11 +64,23 @@ class _AllowLocationPageState extends State<AllowLocationPage> {
     }
   }
 
+  Future<String> _getAddressFromCoordinates(Position position) async {
+    try {
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(position.latitude, position.longitude);
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        return '${place.locality ?? ''}, ${place.administrativeArea ?? ''}, ${place.country ?? ''}';
+      }
+    } catch (e) {
+      print("Reverse geocoding failed: $e");
+    }
+    return "${position.latitude}, ${position.longitude}";
+  }
+
   void _showSnackBar(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -94,105 +107,91 @@ class _AllowLocationPageState extends State<AllowLocationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        color: Colors.white,
-        child: Stack(
-          children: [
-            // Background image
-            Positioned.fill(
-              child: Column(
-                children: [
-                  const SizedBox(height: 150),
-                  Expanded(
-                    child: Image.asset("assets/bg2.png", fit: BoxFit.cover),
-                  ),
-                ],
-              ),
+      body: Stack(
+        children: [
+          // Background image
+          Positioned.fill(
+            child: Image.asset(
+              "assets/bg2.png",
+              fit: BoxFit.cover,
             ),
+          ),
 
-            // Blue location image
-            Positioned(
-              top: MediaQuery.of(context).size.height * 0.1,
-              left: MediaQuery.of(context).size.width * 0.29,
-              child: Container(
-                width: 180,
-                height: 180,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage("assets/allow_loc.png"),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
+          // Blue location icon
+          Positioned(
+            top: MediaQuery.of(context).size.height * 0.1,
+            left: MediaQuery.of(context).size.width * 0.29,
+            child: SizedBox(
+              width: 180,
+              height: 180,
+              child: Image.asset("assets/allow_loc.png", fit: BoxFit.cover),
             ),
+          ),
 
-            // Greeting
-            Positioned(
-              top: MediaQuery.of(context).size.height * 0.35,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Text(
-                  'Allow Location',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Inter',
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-
-            // Description
-            Positioned(
-              top: MediaQuery.of(context).size.height * 0.41,
-              left: 60,
-              right: 60,
+          // Heading
+          Positioned(
+            top: MediaQuery.of(context).size.height * 0.35,
+            left: 0,
+            right: 0,
+            child: const Center(
               child: Text(
-                'Grant location access for accurate search results and navigation.',
-                textAlign: TextAlign.center,
+                'Allow Location',
                 style: TextStyle(
-                  color: Colors.black.withOpacity(0.9),
-                  fontSize: 13,
+                  color: Colors.black,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
                   fontFamily: 'Inter',
-                  fontWeight: FontWeight.w500,
-                  height: 1.6,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
+          ),
 
-            // Allow Permission Button
-            Positioned(
-              top: MediaQuery.of(context).size.height * 0.51,
-              left: 73,
-              right: 73,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0B55A0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(56),
-                  ),
-                  elevation: 3,
-                  minimumSize: const Size.fromHeight(40),
+          // Subheading
+          Positioned(
+            top: MediaQuery.of(context).size.height * 0.41,
+            left: 60,
+            right: 60,
+            child: Text(
+              'Grant location access for accurate search results and navigation.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.black.withOpacity(0.9),
+                fontSize: 13,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w500,
+                height: 1.6,
+              ),
+            ),
+          ),
+
+          // Allow button
+          Positioned(
+            top: MediaQuery.of(context).size.height * 0.51,
+            left: 73,
+            right: 73,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0B55A0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(56),
                 ),
-                onPressed: _showPermissionDialog,
-                child: const Text(
-                  'Allow Permission',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w700,
-                  ),
+                elevation: 3,
+                minimumSize: const Size.fromHeight(40),
+              ),
+              onPressed: _showPermissionDialog,
+              child: const Text(
+                'Allow Permission',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -223,7 +222,6 @@ class CustomLocationPopup extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Horizontal line at bottom
             Positioned(
               left: 0,
               top: 163,
@@ -236,8 +234,6 @@ class CustomLocationPopup extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Vertical line
             Positioned(
               left: 163,
               top: 163,
@@ -250,8 +246,6 @@ class CustomLocationPopup extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Title Text
             const Positioned(
               left: 31,
               top: 22,
@@ -269,8 +263,6 @@ class CustomLocationPopup extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ),
-
-            // Description
             const Positioned(
               left: 25,
               top: 105,
@@ -288,8 +280,6 @@ class CustomLocationPopup extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Allow Button
             Positioned(
               left: 180,
               top: 165,
@@ -312,8 +302,6 @@ class CustomLocationPopup extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Don't Allow Button
             Positioned(
               left: 10,
               top: 160,

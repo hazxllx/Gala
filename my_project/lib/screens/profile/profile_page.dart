@@ -1,223 +1,183 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
-import 'edit_profile_page.dart';
-import 'package:my_project/screens/settings/settings.dart';
-import 'package:my_project/theme/theme_notifier.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'edit_profile_page.dart'; // Ensure this import exists
 
 class ProfilePage extends StatefulWidget {
   final VoidCallback onSettingsTap;
-
-  const ProfilePage({Key? key, required this.onSettingsTap}) : super(key: key);
+  const ProfilePage({
+    super.key,
+    required this.onSettingsTap, required String username,
+  });
 
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String username = 'User Not Found';
-  String phoneNumber = '+63 956 789 9511';
-  String? profileImagePath;
-  final ImagePicker _picker = ImagePicker();
+  String firstName = '';
+  String lastName = '';
+  String email = '';
+  String photoUrl = '';
+  bool isLoading = true;
 
-  Future<void> _pickImage(ImageSource source) async {
-    try {
-      final XFile? pickedFile = await _picker.pickImage(source: source);
-      if (pickedFile != null) {
-        setState(() {
-          profileImagePath = pickedFile.path;
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error selecting image: $e')));
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+    if (userDoc.exists) {
+      final data = userDoc.data()!;
+      setState(() {
+        firstName = data['firstName'] ?? '';
+        lastName = data['lastName'] ?? '';
+        email = data['email'] ?? '';
+        photoUrl = data['photoUrl'] ?? '';
+        isLoading = false;
+      });
     }
-  }
-
-  void _showImageSourceDialog() {
-    showModalBottomSheet(
-      context: context,
-      builder:
-          (context) => SafeArea(
-            child: Wrap(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: const Text('Gallery'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _pickImage(ImageSource.gallery);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.photo_camera),
-                  title: const Text('Camera'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _pickImage(ImageSource.camera);
-                  },
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-
-  void _navigateToEditProfile() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (context) => EditProfilePage(
-              currentUsername: username,
-              currentPhoneNumber: phoneNumber,
-              currentProfileImagePath: profileImagePath,
-              onProfileUpdated:
-                  (
-                    String newUsername,
-                    String newPhone,
-                    String? newImagePath,
-                  ) {},
-            ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final theme = Theme.of(context);
-    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final fullName = (firstName + ' ' + lastName).trim().isEmpty
+        ? 'User Not Found'
+        : '$firstName $lastName';
+    final userName =
+        FirebaseAuth.instance.currentUser?.email?.split('@').first ??
+            'usernotfound23';
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              height: 180,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors:
-                      isDark
-                          ? const [Color(0xFF1A1A2E), Color(0xFF16213E)]
-                          : const [Color(0xFF0A0E23), Color(0xFF6B4E1B)],
-                  begin: Alignment.bottomLeft,
-                  end: Alignment.topRight,
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                          ),
-                          const Spacer(),
-                          const Text(
-                            'My Profile',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const Spacer(),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.settings,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const SettingsPage(),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                  ],
-                ),
-              ),
-            ),
-            if (themeNotifier.isDarkMode)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                color: theme.colorScheme.primary,
-                child: const Center(
-                  child: Text(
-                    'Dark mode enabled',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-            const SizedBox(height: 40),
-
-            // 👤 Profile Picture
-            Center(
-              child: GestureDetector(
-                onTap: _showImageSourceDialog,
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundImage:
-                      profileImagePath != null
-                          ? FileImage(File(profileImagePath!))
-                          : const AssetImage('assets/user.png')
-                              as ImageProvider,
-                  child:
-                      profileImagePath == null
-                          ? const Icon(
-                            Icons.camera_alt,
-                            size: 30,
-                            color: Colors.white70,
-                          )
-                          : null,
-                  backgroundColor: Colors.grey[400],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            //  Username Display
-            Text(
-              username,
-              style: theme.textTheme.titleLarge?.copyWith(color: Colors.black),
-            ),
-
-            const SizedBox(height: 5),
-            Text(
-              phoneNumber,
-              style: TextStyle(color: Colors.black, fontSize: 16),
-            ),
-
-            // Edit Profile Button
-            ElevatedButton.icon(
-              onPressed: _navigateToEditProfile,
-              icon: const Icon(Icons.edit),
-              label: const Text("Edit Profile"),
-            ),
-
-            const SizedBox(height: 20),
-          ],
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text('My Profile'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
         ),
+      ),
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg_settings.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(top: 180),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+              ),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 60),
+                        Text(
+                          fullName,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        GestureDetector(
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditProfilePage(
+                                  currentUsername: '$firstName $lastName',
+                                  currentProfileImagePath: photoUrl.isNotEmpty
+                                      ? photoUrl
+                                      : null,
+                                  onProfileUpdated:
+                                      (updatedUsername, _, updatedImagePath) {
+                                    final parts = updatedUsername.split(' ');
+                                    setState(() {
+                                      firstName = parts.first;
+                                      lastName = parts.length > 1
+                                          ? parts.sublist(1).join(' ')
+                                          : '';
+                                      photoUrl =
+                                          updatedImagePath ?? photoUrl;
+                                    });
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Edit profile',
+                            style: TextStyle(
+                              color: Colors.blue[700],
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Account',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            userName,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Your Activity',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+          Positioned(
+            top: 100,
+            left: MediaQuery.of(context).size.width / 2 - 60,
+            child: CircleAvatar(
+              radius: 60,
+              backgroundImage: photoUrl.isNotEmpty
+                  ? NetworkImage(photoUrl)
+                  : const AssetImage('assets/user.png') as ImageProvider,
+            ),
+          ),
+        ],
       ),
     );
   }

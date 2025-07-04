@@ -1,6 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:http/http.dart' as http;
 
 class FindYourPlacePage extends StatefulWidget {
   @override
@@ -10,48 +13,69 @@ class FindYourPlacePage extends StatefulWidget {
 class _FindYourPlacePageState extends State<FindYourPlacePage> {
   final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
 
-  final List<String> _locations = [
-    'J. Hernandez Avenue, Naga City',
-    'J. Hernandez Street, Iriga City',
-    'J. Hernandez Extension, Pili',
-    'J. Hernandez, Libmanan',
-  ];
-
-  final Map<String, LatLng> locationCoordinates = {
-    'J. Hernandez Avenue, Naga City': LatLng(13.6218, 123.1947),
-    'J. Hernandez Street, Iriga City': LatLng(13.4210, 123.4175),
-    'J. Hernandez Extension, Pili': LatLng(13.5747, 123.2816),
-    'J. Hernandez, Libmanan': LatLng(13.6912, 122.9874),
-  };
-
-  LatLng? _selectedLocation;
-  String? _selectedLocationName;
-  List<String> _filteredSuggestions = [];
+  List<Map<String, dynamic>> _results = [];
+  Map<String, dynamic>? _selectedPlace;
   bool _showConfirmationDialog = false;
 
-  void _onLocationSelected(String location) {
-    setState(() {
-      _selectedLocation = locationCoordinates[location];
-      _selectedLocationName = location;
-      _filteredSuggestions.clear();
-      _searchController.clear();
-      if (_selectedLocation != null) {
-        _mapController.move(_selectedLocation!, 15.0);
-      }
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _searchLocation(query);
     });
   }
 
-  void _filterSuggestions(String input) {
+  Future<void> _searchLocation(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _results.clear();
+      });
+      return;
+    }
+
+    final url = Uri.parse(
+      'https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1&limit=5&countrycodes=ph',
+    );
+
+    try {
+      final response = await http.get(url, headers: {
+        'User-Agent': 'flutter_map_demo_app (your@email.com)'
+      });
+
+      if (response.statusCode == 200) {
+        final List data = json.decode(response.body);
+        setState(() {
+          _results = data.cast<Map<String, dynamic>>();
+        });
+      } else {
+        setState(() {
+          _results = [];
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _results = [];
+      });
+    }
+  }
+
+  void _onSuggestionTap(Map<String, dynamic> place) {
+    final lat = double.parse(place['lat']);
+    final lon = double.parse(place['lon']);
+    final name = place['display_name'];
+
     setState(() {
-      _filteredSuggestions =
-          _locations
-              .where(
-                (location) =>
-                    location.toLowerCase().contains(input.toLowerCase()),
-              )
-              .toList();
+      _selectedPlace = {
+        'lat': lat,
+        'lon': lon,
+        'name': name,
+      };
+      _results.clear();
+      _searchController.clear();
     });
+
+    _mapController.move(LatLng(lat, lon), 15.0);
   }
 
   void _confirmLocation() {
@@ -64,8 +88,15 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
     Navigator.pushNamed(
       context,
       '/success',
-      arguments: {'location': _selectedLocationName!},
+      arguments: {'location': _selectedPlace!['name']},
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
   }
 
   @override
@@ -76,33 +107,31 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              center: LatLng(13.6199, 123.1353),
-              zoom: 10.0,
-              maxBounds: LatLngBounds(LatLng(13.0, 122.5), LatLng(14.0, 123.8)),
+              center: LatLng(13.6218, 123.1947),
+              zoom: 10,
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                 subdomains: ['a', 'b', 'c'],
               ),
-              if (_selectedLocation != null)
+              if (_selectedPlace != null)
                 MarkerLayer(
                   markers: [
                     Marker(
-                      point: _selectedLocation!,
+                      point: LatLng(
+                          _selectedPlace!['lat'], _selectedPlace!['lon']),
                       width: 80,
                       height: 80,
-                      child: const Icon(
-                        Icons.location_pin,
-                        color: Colors.red,
-                        size: 40,
-                      ),
+                      child: const Icon(Icons.location_pin,
+                          color: Colors.red, size: 40),
                     ),
                   ],
                 ),
             ],
           ),
+
+          // 🔍 Search input
           Positioned(
             top: 40,
             left: 20,
@@ -111,108 +140,76 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
               children: [
                 TextField(
                   controller: _searchController,
-                  onChanged: _filterSuggestions,
+                  onChanged: _onSearchChanged,
                   style: const TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.9),
+                    fillColor: Colors.white,
                     hintText: 'Search location...',
                     hintStyle: const TextStyle(color: Colors.black54),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.black),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.black),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(
-                        color: Colors.black,
-                        width: 2,
-                      ),
                     ),
                     prefixIcon: const Icon(Icons.search, color: Colors.black),
                   ),
                 ),
-                if (_filteredSuggestions.isNotEmpty)
+                if (_results.isNotEmpty)
                   Container(
                     margin: const EdgeInsets.only(top: 5),
-                    padding: const EdgeInsets.symmetric(vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.95),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
                     ),
-                    child: ListView(
+                    child: ListView.builder(
                       shrinkWrap: true,
-                      children:
-                          _filteredSuggestions.map((suggestion) {
-                            return ListTile(
-                              title: Text(suggestion),
-                              onTap: () => _onLocationSelected(suggestion),
-                            );
-                          }).toList(),
+                      itemCount: _results.length,
+                      itemBuilder: (context, index) {
+                        final item = _results[index];
+                        return ListTile(
+                          title: Text(item['display_name']),
+                          onTap: () => _onSuggestionTap(item),
+                        );
+                      },
                     ),
                   ),
               ],
             ),
           ),
-          if (_selectedLocation != null && _selectedLocationName != null)
+
+          // ✅ Bottom card — without lat/lon
+          if (_selectedPlace != null)
             Positioned(
-              left: 20,
               bottom: 20,
+              left: 20,
               right: 20,
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black26, blurRadius: 6),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      _selectedLocationName!,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      _selectedPlace!['name'],
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    Text(
-                      'Lat: ${_selectedLocation!.latitude}, Lng: ${_selectedLocation!.longitude}',
-                    ),
+                    // ✅ Removed Lat/Lon Text()
                     Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton(
                         onPressed: _confirmLocation,
+                        child: const Text("Go"),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Colors.blue, // Set background to blue
-                          foregroundColor: Colors.white, // Text color
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 15,
-                            vertical: 5,
-                          ),
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
-                          ),
-                          elevation: 4, // Adds shadow
-                        ),
-                        child: const Text(
-                          'Go',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -221,6 +218,8 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
                 ),
               ),
             ),
+
+          // ✅ Confirm Dialog
           if (_showConfirmationDialog)
             Positioned.fill(
               child: Container(
@@ -240,9 +239,7 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
                         const Text(
                           'Is this your location?',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                          ),
+                              fontSize: 18, fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 20),
                         Row(
@@ -250,23 +247,10 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
                           children: [
                             ElevatedButton(
                               onPressed: _finalizeLocation,
+                              child: const Text("Confirm"),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color.fromARGB(
-                                  255,
-                                  3,
-                                  102,
-                                  182,
-                                ),
+                                backgroundColor: Colors.blue,
                                 foregroundColor: Colors.white,
-                                elevation: 4,
-                                shadowColor: Colors.black,
-                              ),
-                              child: const Text(
-                                'Confirm',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
                               ),
                             ),
                             ElevatedButton(
@@ -275,27 +259,14 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
                                   _showConfirmationDialog = false;
                                 });
                               },
+                              child: const Text("No, Change"),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color.fromARGB(
-                                  255,
-                                  230,
-                                  228,
-                                  228,
-                                ),
+                                backgroundColor: Colors.grey[300],
                                 foregroundColor: Colors.black,
-                                elevation: 4,
-                                shadowColor: Colors.black,
-                              ),
-                              child: const Text(
-                                'No, Change',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
                               ),
                             ),
                           ],
-                        ),
+                        )
                       ],
                     ),
                   ),

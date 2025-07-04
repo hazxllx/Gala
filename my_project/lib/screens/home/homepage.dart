@@ -1,23 +1,15 @@
-/* Authored by: Hazel Salvador
-Company: Eleutheria Ventures
-Project: Gala
-Feature: [GAL-005] Homepage
-Description: Homepage displays the main UI for discovering Camarines Sur locations.
- */
-
-//This code creates a home page that shows a list of places in Camarines Sur with a search feature.
-//It has a top bar, a floating search button, a bottom menu, and clickable location cards.
-//The LocationCard widget displays each place's image and name, and users can search or view more details.
-
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'sidebar.dart';
 import 'category.dart';
 import 'package:provider/provider.dart';
 import 'package:my_project/theme/theme_notifier.dart';
+import 'package:my_project/screens/profile/profile_page.dart';
+import 'package:my_project/screens/settings/settings.dart';
 
 class HomePage extends StatefulWidget {
-  final String username;
-  const HomePage({super.key, required this.username});
+  const HomePage({super.key, required String username});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -28,27 +20,63 @@ class _HomePageState extends State<HomePage> {
   bool showSearchBar = false;
   String searchQuery = "";
   int selectedIndex = 0;
+  String? username;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUsername();
+  }
+
+  Future<void> _fetchUsername() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (doc.exists) {
+          setState(() {
+            username = doc.data()?['username'] as String? ?? 'User';
+          });
+        } else {
+          setState(() {
+            username = 'User'; // Fallback if document doesn't exist
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching username: $e');
+      setState(() {
+        username = 'User'; // Fallback in case of error
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
 
-    // Filter locations based on search query
-    final displayedLocations =
-        locations
-            .where(
-              (location) => location['name']!.toLowerCase().contains(
-                searchQuery.toLowerCase(),
-              ),
-            )
-            .toList();
+    final displayedLocations = locations
+        .where(
+          (location) => location['name']!.toLowerCase().contains(
+            searchQuery.toLowerCase(),
+          ),
+        )
+        .toList();
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      drawer: Sidebar(onLogout: () {}),
+      drawer: Sidebar(onLogout: () async {
+        await FirebaseAuth.instance.signOut();
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+      }),
 
-      /// App bar with logo, menu icon, and dark mode toggle button
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -56,11 +84,10 @@ class _HomePageState extends State<HomePage> {
         leading: Row(
           children: [
             Builder(
-              builder:
-                  (context) => IconButton(
-                    icon: Icon(Icons.menu, color: theme.iconTheme.color),
-                    onPressed: () => Scaffold.of(context).openDrawer(),
-                  ),
+              builder: (context) => IconButton(
+                icon: Icon(Icons.menu, color: theme.iconTheme.color),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
             ),
             Image.asset('assets/logo.png', height: 30),
             const SizedBox(width: 6),
@@ -73,8 +100,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-
-        /// Added dark mode toggle icon button
         actions: [
           IconButton(
             icon: Icon(
@@ -91,18 +116,16 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
 
-      /// Main body content
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 18.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// Greeting with avatar
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Mabuhay, ${widget.username}!",
+                  "Mabuhay, ${username ?? '...'}!",
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : Colors.black,
@@ -117,7 +140,6 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 30),
 
-            /// Header: Discover Camarines Sur
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -133,10 +155,9 @@ class _HomePageState extends State<HomePage> {
                   "Camarines Sur!",
                   style: TextStyle(
                     fontSize: 30,
-                    color:
-                        isDark
-                            ? Colors.blue[200]!
-                            : const Color.fromARGB(255, 13, 94, 161),
+                    color: isDark
+                        ? Colors.blue[200]!
+                        : const Color.fromARGB(255, 13, 94, 161),
                     fontWeight: FontWeight.bold,
                     height: 0.7,
                   ),
@@ -146,7 +167,6 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 11),
 
-            /// Search bar toggle
             if (showSearchBar)
               TextField(
                 onChanged: (value) {
@@ -157,7 +177,6 @@ class _HomePageState extends State<HomePage> {
                 decoration: InputDecoration(
                   hintText: "Search for a location",
                   prefixIcon: Icon(Icons.search, color: theme.iconTheme.color),
-
                   filled: true,
                   fillColor: theme.cardColor,
                   border: OutlineInputBorder(
@@ -170,7 +189,6 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 16),
 
-            /// Search label + toggle button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -196,7 +214,6 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
 
-            /// No results fallback
             if (displayedLocations.isEmpty)
               Center(
                 child: Text(
@@ -208,88 +225,79 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-            /// Display search results or carousel
             if (displayedLocations.isNotEmpty)
               searchQuery.isNotEmpty || showAll
                   ? Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children:
-                        displayedLocations.map((location) {
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => CategoryScreen(
-                                        locationName: location['name']!,
-                                      ),
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: displayedLocations.map((location) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CategoryScreen(
+                                  locationName: location['name']!,
                                 ),
-                              );
-                            },
-                            child: SizedBox(
-                              width:
-                                  (MediaQuery.of(context).size.width - 48) / 2,
-                              child: LocationCard(location: location),
-                            ),
-                          );
-                        }).toList(),
-                  )
-                  : SizedBox(
-                    height: 260,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: (displayedLocations.length / 2).ceil(),
-                      itemBuilder: (context, columnIndex) {
-                        final firstIndex = columnIndex * 2;
-                        final secondIndex = firstIndex + 1;
-
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: Column(
-                            children: [
-                              _buildLocationTile(
-                                context,
-                                displayedLocations[firstIndex],
                               ),
-                              const SizedBox(height: 12),
-                              if (secondIndex < displayedLocations.length)
-                                _buildLocationTile(
-                                  context,
-                                  displayedLocations[secondIndex],
-                                ),
-                            ],
+                            );
+                          },
+                          child: SizedBox(
+                            width: (MediaQuery.of(context).size.width - 48) / 2,
+                            child: LocationCard(location: location),
                           ),
                         );
-                      },
+                      }).toList(),
+                    )
+                  : SizedBox(
+                      height: 260,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: (displayedLocations.length / 2).ceil(),
+                        itemBuilder: (context, columnIndex) {
+                          final firstIndex = columnIndex * 2;
+                          final secondIndex = firstIndex + 1;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: Column(
+                              children: [
+                                _buildLocationTile(
+                                  context,
+                                  displayedLocations[firstIndex],
+                                ),
+                                const SizedBox(height: 12),
+                                if (secondIndex < displayedLocations.length)
+                                  _buildLocationTile(
+                                    context,
+                                    displayedLocations[secondIndex],
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  ),
 
             const SizedBox(height: 40),
 
-            /// Informational box at the bottom
-            /// Informational box at the bottom
-            /// Informational box at the bottom
             Center(
               child: Container(
                 width: 360,
-                height: 200, // Container size
+                height: 200,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color:
-                      isDark
-                          ? const Color.fromARGB(255, 1, 26, 55)
-                          : Colors.white,
-
-                  borderRadius: BorderRadius.circular(16), // Rounded corners
+                  color: isDark
+                      ? const Color.fromARGB(255, 1, 26, 55)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black12,
                       blurRadius: 8,
                       offset: Offset(0, 4),
                     ),
-                  ], // Optional shadow for depth
+                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -309,10 +317,9 @@ class _HomePageState extends State<HomePage> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color:
-                            isDark
-                                ? Colors.blue[200]!
-                                : const Color.fromARGB(255, 14, 94, 159),
+                        color: isDark
+                            ? Colors.blue[200]!
+                            : const Color.fromARGB(255, 14, 94, 159),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -321,10 +328,9 @@ class _HomePageState extends State<HomePage> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 12.5,
-                        color:
-                            isDark
-                                ? Colors.white70
-                                : const Color.fromARGB(226, 0, 0, 0),
+                        color: isDark
+                            ? Colors.white70
+                            : const Color.fromARGB(226, 0, 0, 0),
                       ),
                     ),
                   ],
@@ -335,11 +341,8 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
 
-      /// Floating search button
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(
-          bottom: 5,
-        ), // lowers the FAB by 20 pixels
+        padding: const EdgeInsets.only(bottom: 5),
         child: FloatingActionButton(
           shape: const CircleBorder(),
           backgroundColor: const Color.fromARGB(255, 15, 114, 196),
@@ -358,12 +361,12 @@ class _HomePageState extends State<HomePage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 15,
-        ), // reduced vertical margin to 12
+        margin: EdgeInsets.symmetric(
+          horizontal: screenWidth * 0.05,
+          vertical: screenWidth * 0.04,
+        ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? Colors.grey[900] : Colors.white,
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
@@ -378,36 +381,50 @@ class _HomePageState extends State<HomePage> {
           onTap: (index) {
             setState(() {
               selectedIndex = index;
+              if (index == 3) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(
+                      username: username ?? 'User',
+                      onSettingsTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SettingsPage(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                );
+              }
             });
           },
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.transparent,
           elevation: 0,
           selectedItemColor: Colors.blue,
-          unselectedItemColor: Colors.black,
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
+          unselectedItemColor: isDark ? Colors.grey[400] : Colors.black,
+          showSelectedLabels: screenWidth > 600,
+          showUnselectedLabels: screenWidth > 600,
+          iconSize: screenWidth * 0.06,
+          selectedFontSize: screenWidth * 0.015,
+          unselectedFontSize: screenWidth * 0.012,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: "Home"),
             BottomNavigationBarItem(
-              icon: Icon(Icons.favorite_border),
-              label: "Favorites",
-            ),
+                icon: Icon(Icons.favorite_border), label: "Favorites"),
             BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_none),
-              label: "Alerts",
-            ),
+                icon: Icon(Icons.notifications_none), label: "Alerts"),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              label: "Profile",
-            ),
+                icon: Icon(Icons.person_outline), label: "Profile"),
           ],
         ),
       ),
     );
   }
 
-  /// Builds a vertical location tile used in horizontal scrolling list
   Widget _buildLocationTile(
     BuildContext context,
     Map<String, String> location,
@@ -417,8 +434,7 @@ class _HomePageState extends State<HomePage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder:
-                (context) => CategoryScreen(locationName: location['name']!),
+            builder: (context) => CategoryScreen(locationName: location['name']!),
           ),
         );
       },
@@ -431,10 +447,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/// A card widget that displays a location image and name overlay.
-///
-/// It is used inside the location list and offers a clickable card
-/// for users to navigate to detailed location pages.
 class LocationCard extends StatelessWidget {
   final Map<String, String> location;
   final double height;
@@ -466,26 +478,22 @@ class LocationCard extends StatelessWidget {
               child: Opacity(
                 opacity: 0.99,
                 child: AspectRatio(
-                  aspectRatio: 4 / 3, // Fix aspect ratio to 4:3
+                  aspectRatio: 4 / 3,
                   child: Image.asset(location['image']!, fit: BoxFit.cover),
                 ),
               ),
             ),
-
-            // Text overlay positioned at bottom-left
             Positioned(
               left: 12,
               bottom: 12,
-              right: 12, // Optional, so text doesn't overflow
+              right: 12,
               child: Container(
-                // Semi-transparent background for readability
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-
                 child: Text(
                   location['name']!,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 20, // Bigger font size
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     shadows: [
                       Shadow(
@@ -507,7 +515,6 @@ class LocationCard extends StatelessWidget {
   }
 }
 
-/// Static list of locations in Camarines Sur with name and image.
 final List<Map<String, String>> locations = [
   {'name': 'Naga City', 'image': 'assets/naga_city.png'},
   {'name': 'Pili', 'image': 'assets/pili.jpg'},
