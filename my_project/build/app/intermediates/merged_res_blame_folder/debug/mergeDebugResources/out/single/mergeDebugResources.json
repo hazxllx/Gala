@@ -1,62 +1,42 @@
 [
     {
-        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-debug-51:\\mipmap-xxhdpi_logo1.png.flat",
-        "source": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-main-45:\\mipmap-xxhdpi\\logo1.png"
-    },
-    {
         "merged": "com.example.my_project.app-debug-51:/mipmap-xhdpi_ic_launcher.png.flat",
         "source": "com.example.my_project.app-main-45:/mipmap-xhdpi/ic_launcher.png"
     },
     {
-        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-debug-51:\\mipmap-mdpi_ic_launcher.png.flat",
-        "source": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-main-45:\\mipmap-mdpi\\ic_launcher.png"
+        "merged": "com.example.my_project.app-debug-51:/mipmap-hdpi_logo1.png.flat",
+        "source": "com.example.my_project.app-main-45:/mipmap-hdpi/logo1.png"
     },
     {
-        "merged": "com.example.my_project.app-debug-51:/mipmap-mdpi_ic_launcher.png.flat",
-        "source": "com.example.my_project.app-main-45:/mipmap-mdpi/ic_launcher.png"
+        "merged": "com.example.my_project.app-debug-51:/mipmap-xxhdpi_logo1.png.flat",
+        "source": "com.example.my_project.app-main-45:/mipmap-xxhdpi/logo1.png"
     },
     {
-        "merged": "com.example.my_project.app-debug-51:/mipmap-hdpi_ic_launcher.png.flat",
-        "source": "com.example.my_project.app-main-45:/mipmap-hdpi/ic_launcher.png"
-    },
-    {
-        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-debug-51:\\mipmap-xxhdpi_ic_launcher.png.flat",
-        "source": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-main-45:\\mipmap-xxhdpi\\ic_launcher.png"
-    },
-    {
-        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-debug-51:\\mipmap-xhdpi_logo1.png.flat",
-        "source": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-main-45:\\mipmap-xhdpi\\logo1.png"
-    },
-    {
-        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-debug-51:\\mipmap-hdpi_logo1.png.flat",
-        "source": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-main-45:\\mipmap-hdpi\\logo1.png"
-    },
-    {
-        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-debug-51:\\mipmap-xhdpi_ic_launcher.png.flat",
-        "source": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-main-45:\\mipmap-xhdpi\\ic_launcher.png"
-    },
-    {
-        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-debug-51:\\drawable-v21_launch_background.xml.flat",
-        "source": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-main-45:\\drawable-v21\\launch_background.xml"
+        "merged": "com.example.my_project.app-debug-51:/mipmap-mdpi_logo1.png.flat",
+        "source": "com.example.my_project.app-main-45:/mipmap-mdpi/logo1.png"
     },
     {
         "merged": "com.example.my_project.app-debug-51:/mipmap-xxxhdpi_ic_launcher.png.flat",
         "source": "com.example.my_project.app-main-45:/mipmap-xxxhdpi/ic_launcher.png"
     },
     {
+        "merged": "com.example.my_project.app-debug-51:/mipmap-mdpi_ic_launcher.png.flat",
+        "source": "com.example.my_project.app-main-45:/mipmap-mdpi/ic_launcher.png"
+    },
+    {
         "merged": "com.example.my_project.app-debug-51:/mipmap-xxhdpi_ic_launcher.png.flat",
         "source": "com.example.my_project.app-main-45:/mipmap-xxhdpi/ic_launcher.png"
     },
     {
-        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-debug-51:\\mipmap-mdpi_logo1.png.flat",
-        "source": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-main-45:\\mipmap-mdpi\\logo1.png"
+        "merged": "com.example.my_project.app-debug-51:/mipmap-xhdpi_logo1.png.flat",
+        "source": "com.example.my_project.app-main-45:/mipmap-xhdpi/logo1.png"
     },
     {
-        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-debug-51:\\mipmap-xxxhdpi_ic_launcher.png.flat",
-        "source": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-main-45:\\mipmap-xxxhdpi\\ic_launcher.png"
+        "merged": "com.example.my_project.app-debug-51:/mipmap-hdpi_ic_launcher.png.flat",
+        "source": "com.example.my_project.app-main-45:/mipmap-hdpi/ic_launcher.png"
     },
     {
-        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-debug-51:\\mipmap-hdpi_ic_launcher.png.flat",
-        "source": "C:\\Users\\user\\.gradle\\daemon\\8.10.2\\com.example.my_project.app-main-45:\\mipmap-hdpi\\ic_launcher.png"
+        "merged": "com.example.my_project.app-debug-51:/drawable-v21_launch_background.xml.flat",
+        "source": "com.example.my_project.app-main-45:/drawable-v21/launch_background.xml"
     }
 ]

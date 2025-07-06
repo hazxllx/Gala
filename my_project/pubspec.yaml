@@ -92,7 +92,27 @@ flutter:
     - assets/images/bomb.png
     - assets/images/fsq.png
     - assets/images/google.png
+    - assets/images/lemon.png
+    - assets/images/coffee.png
+    - assets/images/menu1.png
+    - assets/images/clatte.png
+    - assets/images/chimp.png
     - assets/images/fb.png
+    - assets/images/arco_diez.jpg
+    - assets/icons/location.png
+    - assets/icons/menu.png
+    - assets/icons/star_filled.png
+    - assets/images/tea_bag.png
+    - assets/images/chocolate.png
+    - assets/images/matcha.png
+    - assets/images/mlatte.png
+    - assets/images/mclatte.png
+    - assets/images/slatte.png
+    - assets/images/mglatte.png
+    - assets/images/mslatte.png
+    - assets/images/mm.png
+    - assets/images/blatte.png
+    - assets/images/mb.png
 
   fonts:
     - family: Inter

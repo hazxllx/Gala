@@ -17,10 +17,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool showAll = false;
-  bool showSearchBar = false;
   String searchQuery = "";
   int selectedIndex = 0;
   String? username;
+  String? userPhotoUrl; // <-- Added line
 
   @override
   void initState() {
@@ -36,20 +36,16 @@ class _HomePageState extends State<HomePage> {
             .collection('users')
             .doc(user.uid)
             .get();
-        if (doc.exists) {
-          setState(() {
-            username = doc.data()?['username'] as String? ?? 'User';
-          });
-        } else {
-          setState(() {
-            username = 'User'; // Fallback if document doesn't exist
-          });
-        }
+        setState(() {
+          username = doc.data()?['username'] as String? ?? 'User';
+          userPhotoUrl = user.photoURL; // <-- Get Gmail photo URL if available
+        });
       }
     } catch (e) {
       print('Error fetching username: $e');
       setState(() {
-        username = 'User'; // Fallback in case of error
+        username = 'User';
+        userPhotoUrl = null;
       });
     }
   }
@@ -63,8 +59,8 @@ class _HomePageState extends State<HomePage> {
     final displayedLocations = locations
         .where(
           (location) => location['name']!.toLowerCase().contains(
-            searchQuery.toLowerCase(),
-          ),
+                searchQuery.toLowerCase(),
+              ),
         )
         .toList();
 
@@ -76,7 +72,6 @@ class _HomePageState extends State<HomePage> {
           Navigator.pushReplacementNamed(context, '/login');
         }
       }),
-
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -115,7 +110,6 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(width: 16),
         ],
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 18.0),
         child: Column(
@@ -131,15 +125,17 @@ class _HomePageState extends State<HomePage> {
                     color: isDark ? Colors.white : Colors.black,
                   ),
                 ),
-                const CircleAvatar(
-                  backgroundImage: AssetImage('assets/user.png'),
+                CircleAvatar(
+                  backgroundImage: userPhotoUrl != null
+                      ? NetworkImage(userPhotoUrl!) as ImageProvider
+                      : const AssetImage('assets/user.png'),
                   backgroundColor: Colors.transparent,
                   radius: 20,
                 ),
               ],
             ),
-            const SizedBox(height: 30),
 
+            const SizedBox(height: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -166,29 +162,26 @@ class _HomePageState extends State<HomePage> {
             ),
 
             const SizedBox(height: 11),
-
-            if (showSearchBar)
-              TextField(
-                onChanged: (value) {
-                  setState(() {
-                    searchQuery = value;
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: "Search for a location",
-                  prefixIcon: Icon(Icons.search, color: theme.iconTheme.color),
-                  filled: true,
-                  fillColor: theme.cardColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
+            TextField(
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: "Search for a location",
+                prefixIcon: Icon(Icons.search, color: theme.iconTheme.color),
+                filled: true,
+                fillColor: theme.cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
                 ),
-                style: const TextStyle(fontSize: 18),
               ),
+              style: const TextStyle(fontSize: 18),
+            ),
 
             const SizedBox(height: 16),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -340,26 +333,6 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 5),
-        child: FloatingActionButton(
-          shape: const CircleBorder(),
-          backgroundColor: const Color.fromARGB(255, 15, 114, 196),
-          onPressed: () {
-            setState(() {
-              showSearchBar = !showSearchBar;
-              if (!showSearchBar) searchQuery = "";
-            });
-          },
-          child: Icon(
-            showSearchBar ? Icons.close : Icons.search,
-            color: Colors.white,
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-
       bottomNavigationBar: Container(
         margin: EdgeInsets.symmetric(
           horizontal: screenWidth * 0.05,
@@ -413,12 +386,9 @@ class _HomePageState extends State<HomePage> {
           unselectedFontSize: screenWidth * 0.012,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: "Home"),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.favorite_border), label: "Favorites"),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.notifications_none), label: "Alerts"),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline), label: "Profile"),
+            BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: "Favorites"),
+            BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: "Alerts"),
+            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: "Profile"),
           ],
         ),
       ),

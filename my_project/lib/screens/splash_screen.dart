@@ -7,23 +7,24 @@ Description: The introductory screen that appears when opening the app.
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  final bool showButtons;
+
+  const SplashScreen({Key? key, required this.showButtons}) : super(key: key);
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  bool _showButtons = false;
-
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
-      setState(() {
-        _showButtons = true;
+    if (!widget.showButtons) {
+      // If buttons are not shown, navigate to onboarding after 3 seconds
+      Future.delayed(const Duration(seconds: 3), () {
+        Navigator.pushReplacementNamed(context, '/onboarding');
       });
-    });
+    }
   }
 
   @override
@@ -64,8 +65,8 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
 
-            // Buttons at bottom (only show after 3 seconds)
-            if (_showButtons)
+            // Buttons at bottom (only show if showButtons is true)
+            if (widget.showButtons)
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(

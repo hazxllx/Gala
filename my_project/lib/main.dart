@@ -56,11 +56,18 @@ class MyApp extends StatelessWidget {
         textTheme: Theme.of(context).textTheme.apply(fontFamily: 'Inter'),
       ),
       themeMode: themeNotifier.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      initialRoute: onboardingCompleted ? '/' : '/onboarding',
+      initialRoute: '/splash_initial', // Start with the initial splash screen (no buttons)
       onGenerateRoute: (settings) {
         switch (settings.name) {
-          case '/':
-            return MaterialPageRoute(builder: (_) => const SplashScreen());
+          case '/splash_initial':
+            return MaterialPageRoute(
+              builder: (_) => const SplashScreen(showButtons: false),
+            );
+
+          case '/splash_auth':
+            return MaterialPageRoute(
+              builder: (_) => const SplashScreen(showButtons: true),
+            );
 
           case '/login':
             return MaterialPageRoute(builder: (_) => const LoginPage());
@@ -75,7 +82,8 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const AllowLocationPage());
 
           case '/set_current_location':
-            return MaterialPageRoute(builder: (_) => const SetCurrentLocationPage());
+            return MaterialPageRoute(
+                builder: (_) => const SetCurrentLocationPage());
 
           case '/find_your_place':
             return MaterialPageRoute(builder: (_) => FindYourPlacePage());
@@ -94,7 +102,7 @@ class MyApp extends StatelessWidget {
                 onboardingCompleted: (ctx) async {
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.setBool('onboarding_completed', true);
-                  Navigator.pushReplacementNamed(ctx, '/set_location');
+                  Navigator.pushReplacementNamed(ctx, '/splash_auth'); // Go to splash with buttons
                 },
               ),
             );
@@ -132,3 +140,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

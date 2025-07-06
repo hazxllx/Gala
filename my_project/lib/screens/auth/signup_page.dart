@@ -68,9 +68,9 @@ class _SignUpPageState extends State<SignUpPage> {
         await user.sendEmailVerification();
 
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('onboarding_completed', false);
+        await prefs.setBool('onboarding_completed', true); // Mark onboarding as completed
 
-        Navigator.pushReplacementNamed(context, '/onboarding');
+        Navigator.pushReplacementNamed(context, '/set_location'); // Navigate to set_location
       } on FirebaseAuthException catch (e) {
         String message = _handleFirebaseError(e);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -119,12 +119,13 @@ class _SignUpPageState extends State<SignUpPage> {
           });
 
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('onboarding_completed', false);
-          Navigator.pushReplacementNamed(context, '/onboarding');
+          await prefs.setBool('onboarding_completed', true); // Mark onboarding as completed
+          Navigator.pushReplacementNamed(context, '/set_location'); // Navigate to set_location
         } else {
           final prefs = await SharedPreferences.getInstance();
           final onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
-          Navigator.pushReplacementNamed(context, onboardingCompleted ? '/home' : '/onboarding');
+          Navigator.pushReplacementNamed(
+              context, onboardingCompleted ? '/homepage' : '/set_location');
         }
       }
     } catch (e) {
@@ -169,27 +170,27 @@ class _SignUpPageState extends State<SignUpPage> {
           "Create an account",
           style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 30),
+        const SizedBox(height: 15), // Reduced spacing to fit content
         Form(
           key: _formKeyPage1,
           child: Column(
             children: [
               _buildTextField("Email address", _emailController, icon: Icons.email),
-              const SizedBox(height: 15),
+              const SizedBox(height: 10), // Reduced spacing
               _buildTextField("First Name", _firstNameController, icon: Icons.person),
-              const SizedBox(height: 15),
+              const SizedBox(height: 10), // Reduced spacing
               _buildTextField("Last Name", _lastNameController, icon: Icons.person_outline),
-              const SizedBox(height: 15),
+              const SizedBox(height: 10), // Reduced spacing
               _buildTextField("Username", _usernameController, icon: Icons.person_pin),
-              const SizedBox(height: 30),
+              const SizedBox(height: 15), // Reduced spacing
               _buildButton("Next", () {
                 if (_formKeyPage1.currentState!.validate()) {
                   setState(() => _currentPage = 1);
                 }
               }),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10), // Reduced spacing
               const Text("or", style: TextStyle(fontSize: 16, color: Colors.grey)),
-              const SizedBox(height: 10),
+              const SizedBox(height: 5), // Reduced spacing
               _isLoading
                   ? const CircularProgressIndicator()
                   : _buildButtonWithIcon(
@@ -213,15 +214,15 @@ class _SignUpPageState extends State<SignUpPage> {
           "Set your password",
           style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 30),
+        const SizedBox(height: 20), // Reduced spacing to fit content
         Form(
           key: _formKeyPage2,
           child: Column(
             children: [
               _buildPasswordField("Password", _passwordController),
-              const SizedBox(height: 15),
+              const SizedBox(height: 10), // Reduced spacing
               _buildPasswordField("Confirm Password", _confirmPasswordController),
-              const SizedBox(height: 50),
+              const SizedBox(height: 20), // Reduced spacing
               _isLoading ? const CircularProgressIndicator() : _buildButton("SIGN UP", signUp),
             ],
           ),
@@ -233,59 +234,66 @@ class _SignUpPageState extends State<SignUpPage> {
   Widget _buildHeader(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+        padding: const EdgeInsets.fromLTRB(24, 25, 24, 0), // Top padding to position header
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Logo & Back button aligned
+            // Align back button and "Join the Adventure" text in a Row for horizontal alignment
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center, // Perfect vertical centering
               children: [
-                Image.asset('assets/logoWhite.png', height: 28),
-                IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-                  onPressed: () {
-                    if (_currentPage == 1) {
-                      setState(() => _currentPage = 0);
-                    } else {
-                      Navigator.pop(context);
-                    }
-                  },
+                Expanded(
+                  child: RichText(
+                    textAlign: TextAlign.left,
+                    text: const TextSpan(
+                      children: [
+                        TextSpan(
+                          text: "Join the\n",
+                          style: TextStyle(
+                            fontSize: 34, // Large font size for visibility
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            height: 1.0, // Minimal line height for compactness
+                          ),
+                        ),
+                        TextSpan(
+                          text: "adventure!",
+                          style: TextStyle(
+                            fontSize: 34, // Large font size for visibility
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF48A1E0),
+                            height: 1.0, // Minimal line height for compactness
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Transform.translate(
+                  offset: const Offset(0, -5), // Move arrow up a bit
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 34), // Size matches text height
+                    padding: const EdgeInsets.all(0), // Remove extra padding
+                    constraints: const BoxConstraints(), // Remove constraints for perfect alignment
+                    onPressed: () {
+                      if (_currentPage == 1) {
+                        setState(() => _currentPage = 0);
+                      } else {
+                        Navigator.pop(context);
+                      }
+                    },
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            RichText(
-              text: const TextSpan(
-                children: [
-                  TextSpan(
-                    text: "Join the\n",
-                    style: TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.2,
-                    ),
-                  ),
-                  TextSpan(
-                    text: "adventure!",
-                    style: TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF48A1E0),
-                      height: 1.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 0.5), // Minimal spacing to keep "Sign up to discover..." close
             const Text(
               "Sign up to discover the best cafes, restaurants, and parks in Camarines Sur. Your journey starts here!",
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 12,
-                height: 1.5,
+                fontSize: 12, // Increased font size for visibility
+                height: 1.15, // Minimal line height for compactness
               ),
             ),
           ],
@@ -302,6 +310,7 @@ class _SignUpPageState extends State<SignUpPage> {
         labelText: label,
         prefixIcon: icon != null ? Icon(icon) : null,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12), // Adjusted for compactness
       ),
     );
   }
@@ -329,6 +338,7 @@ class _SignUpPageState extends State<SignUpPage> {
               onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
             ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12), // Adjusted for compactness
           ),
         );
       },
@@ -342,7 +352,7 @@ class _SignUpPageState extends State<SignUpPage> {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color.fromARGB(255, 0, 71, 165),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 14), // Slightly reduced for compactness
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: Text(
@@ -364,7 +374,7 @@ class _SignUpPageState extends State<SignUpPage> {
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 14), // Slightly reduced for compactness
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           side: BorderSide(color: Colors.grey.shade400),
         ),
@@ -392,7 +402,7 @@ class _SignUpFormWrapper extends StatelessWidget {
         Opacity(
           opacity: 0.6,
           child: Container(
-            height: MediaQuery.of(context).size.height * 0.7,
+            height: MediaQuery.of(context).size.height * 0.45, // Reduced background height to move container up
             decoration: BoxDecoration(
               image: DecorationImage(
                 image: AssetImage(backgroundImage),
@@ -405,14 +415,15 @@ class _SignUpFormWrapper extends StatelessWidget {
         Align(
           alignment: Alignment.bottomCenter,
           child: Container(
-            padding: const EdgeInsets.all(30),
-            height: MediaQuery.of(context).size.height * 0.62,
+            padding: const EdgeInsets.all(20), // Reduced padding for compactness
+            height: MediaQuery.of(context).size.height * 0.75, // Increased container height for Google Sign-In visibility
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
             ),
-            child: SingleChildScrollView(
-              child: Column(children: children),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: children,
             ),
           ),
         ),

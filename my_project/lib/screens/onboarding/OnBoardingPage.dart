@@ -13,7 +13,7 @@ class OnboardingPage extends StatefulWidget {
   final Future<void> Function(BuildContext) onboardingCompleted;
 
   const OnboardingPage({Key? key, required this.onboardingCompleted})
-    : super(key: key);
+      : super(key: key);
 
   @override
   _OnboardingPageState createState() => _OnboardingPageState();
@@ -93,17 +93,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
           Positioned(
             top: _currentPage == 1 ? 80 : null, // Slide 2 at top:60
             bottom:
-                _currentPage != 1
-                    ? 2
-                    : null, // Slides 1 & 3 above bottom by 60
+                _currentPage != 1 ? 2 : null, // Slides 1 & 3 above bottom by 60
             left: 0,
             right: 0,
             child: Padding(
               padding: EdgeInsets.only(
-                top:
-                    _currentPage == 1
-                        ? 5
-                        : 0, // slide 2 has small top padding, others none
+                top: _currentPage == 1
+                    ? 5
+                    : 0, // slide 2 has small top padding, others none
               ),
               child: Container(
                 color: Colors.transparent,
@@ -118,65 +115,67 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     // Heading
                     _currentPage == 0
                         ? RichText(
-                          textAlign: TextAlign.center,
-                          text: TextSpan(
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Inter',
-                              color: Colors.black,
-                            ),
-                            children: [
-                              TextSpan(text: 'Mabuhay, '),
-                              TextSpan(
-                                text: 'Explorer!',
-                                style: TextStyle(color: Colors.blue[900]),
+                            textAlign: TextAlign.center,
+                            text: TextSpan(
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: 'Inter',
+                                color: Colors.black,
                               ),
-                            ],
-                          ),
-                        )
-                        : _currentPage == 1
-                        ? RichText(
-                          textAlign: TextAlign.center,
-                          text: TextSpan(
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Inter',
-                              color: Colors.blue[900],
-                            ),
-                            children: [
-                              TextSpan(text: 'Find '),
-                              TextSpan(
-                                text: 'your way!',
-                                style: TextStyle(
-                                  color: const Color.fromARGB(255, 0, 0, 0),
+                              children: [
+                                TextSpan(text: 'Mabuhay, '),
+                                TextSpan(
+                                  text: 'Explorer!',
+                                  style: TextStyle(color: Colors.blue[900]),
                                 ),
-                              ),
-                            ],
-                          ),
-                        )
-                        : _currentPage == 2
-                        ? RichText(
-                          textAlign: TextAlign.center,
-                          text: TextSpan(
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Inter',
-                              color: Colors.black,
+                              ],
                             ),
-                            children: [
-                              TextSpan(text: 'Your '),
-                              TextSpan(
-                                text: 'Travel Buddy',
-                                style: TextStyle(color: Colors.blue[900]),
-                              ),
-                              TextSpan(text: ' is Here!'),
-                            ],
-                          ),
-                        )
-                        : Container(),
+                          )
+                        : _currentPage == 1
+                            ? RichText(
+                                textAlign: TextAlign.center,
+                                text: TextSpan(
+                                  style: TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w700,
+                                    fontFamily: 'Inter',
+                                    color: Colors.blue[900],
+                                  ),
+                                  children: [
+                                    TextSpan(text: 'Find '),
+                                    TextSpan(
+                                      text: 'your way!',
+                                      style: TextStyle(
+                                        color: const Color.fromARGB(
+                                            255, 0, 0, 0),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : _currentPage == 2
+                                ? RichText(
+                                    textAlign: TextAlign.center,
+                                    text: TextSpan(
+                                      style: TextStyle(
+                                        fontSize: 26,
+                                        fontWeight: FontWeight.w700,
+                                        fontFamily: 'Inter',
+                                        color: Colors.black,
+                                      ),
+                                      children: [
+                                        TextSpan(text: 'Your '),
+                                        TextSpan(
+                                          text: 'Travel Buddy',
+                                          style:
+                                              TextStyle(color: Colors.blue[900]),
+                                        ),
+                                        TextSpan(text: ' is Here!'),
+                                      ],
+                                    ),
+                                  )
+                                : Container(),
 
                     const SizedBox(height: 16),
 
@@ -201,10 +200,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           height: 8,
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           decoration: BoxDecoration(
-                            color:
-                                _currentPage == index
-                                    ? Colors.blue
-                                    : Colors.grey[400],
+                            color: _currentPage == index
+                                ? Colors.blue
+                                : Colors.grey[400],
                             shape: BoxShape.circle,
                           ),
                         );
@@ -252,7 +250,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                 );
                                 Navigator.pushReplacementNamed(
                                   context,
-                                  '/set_location',
+                                  '/splash_auth', // Navigate to splash with buttons
                                 );
                               } else {
                                 _nextPage();
