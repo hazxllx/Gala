@@ -1,0 +1,15 @@
+# Flutter
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Other
+pubspec.lock
