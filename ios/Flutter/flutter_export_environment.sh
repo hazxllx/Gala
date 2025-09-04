@@ -1,7 +1,7 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
 export "FLUTTER_ROOT=C:\Users\Hazel\dev\flutter"
-export "FLUTTER_APPLICATION_PATH=C:\Users\Hazel\Downloads\Gala-firebase-implementation\Gala-firebase-implementation\my_project"
+export "FLUTTER_APPLICATION_PATH=C:\Users\Hazel\Downloads\Gala_\Gala_\my_project"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_TARGET=lib\main.dart"
 export "FLUTTER_BUILD_DIR=build"
