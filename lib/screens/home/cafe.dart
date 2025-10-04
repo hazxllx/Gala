@@ -2,19 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Import your Favorites screen here with alias to avoid conflict
+import 'package:my_project/screens/home/arcodiez/arco_diez.dart';
+import 'package:my_project/screens/home/harina/harina.dart';
 import 'package:my_project/screens/favorites.dart' as fav;
-
-// Import profile page with alias to avoid conflict
 import 'package:my_project/screens/profile/profile_page.dart' as profile;
 import 'package:my_project/screens/settings/settings.dart';
-
-// Import notifications.dart with alias to avoid conflict
 import 'package:my_project/screens/notifications.dart' as notif;
+import 'package:my_project/screens/home/header.dart';
 
 class CafePage extends StatefulWidget {
   final String locationName;
-
   const CafePage({super.key, required this.locationName});
 
   @override
@@ -25,49 +22,39 @@ class _CafePageState extends State<CafePage> {
   final TextEditingController _searchController = TextEditingController();
   int selectedIndex = 0;
 
-  // Store favorite cafe titles for quick lookup
-  Set<String> favoriteCafeTitles = {};
-
-  // Define your cafes as data objects only
-  final List<CafeData> allCafes = const [
+  List<CafeData> allCafes = [
     CafeData(
-      imagePath: 'assets/arco_diez.jpeg',
+      imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_diez.jpeg',
       title: 'Arco Diez Cafe',
-      subtitle: 'Pacol Rd, Naga',
-      rating: 4.6,
+      subtitle: 'Pacol Rd, Naga City',
     ),
     CafeData(
-      imagePath: 'assets/tct.jpg',
+      imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/tct.jpg',
       title: 'The Coffee Table',
-      subtitle: 'Magsaysay Ave, Naga',
-      rating: 4.3,
+      subtitle: 'Magsaysay Ave, Naga City',
     ),
     CafeData(
-      imagePath: 'assets/harina.jpeg',
+      imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/harina.jpeg',
       title: 'Harina Cafe',
-      subtitle: 'Narra St, Naga',
-      rating: 4.1,
+      subtitle: 'Narra St, Naga City',
     ),
   ];
 
-  final List<CafeData> nearbyCafes = const [
+  List<CafeData> nearbyCafes = [
     CafeData(
-      imagePath: 'assets/beanleaf.png',
+      imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/beanleaf.png',
       title: 'Beanleaf Coffee and Tea',
-      subtitle: '2F Grand Master Mall',
-      rating: 4.4,
+      subtitle: '2F Grand Master Mall, Naga City',
     ),
     CafeData(
-      imagePath: 'assets/bellissimo.png',
+      imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/bellissimo.png',
       title: 'Bellissimo Boulangerie & Patisserie',
-      subtitle: '800, 461',
-      rating: 4.4,
+      subtitle: '800, 461, Naga City',
     ),
     CafeData(
-      imagePath: 'assets/garden_cafe.jpeg',
+      imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/garden_cafe.jpeg',
       title: 'Starmark Cafe',
-      subtitle: 'Diaz St. cor Peñafrancia',
-      rating: 4.2,
+      subtitle: 'Diaz St. cor Peñafrancia, Naga City',
     ),
   ];
 
@@ -87,31 +74,43 @@ class _CafePageState extends State<CafePage> {
 
   User? user;
   String? userPhotoUrl;
+  Stream<Set<String>> favoriteCafeTitlesStream = Stream.value(<String>{});
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(() => setState(() {}));
-    user = FirebaseAuth.instance.currentUser ;
+    user = FirebaseAuth.instance.currentUser;
     userPhotoUrl = user?.photoURL;
-    _loadFavorites();
+    if (user != null) {
+      favoriteCafeTitlesStream = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .collection('favorites')
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.id).toSet());
+    }
   }
 
-  Future<void> _loadFavorites() async {
-    if (user == null) return;
-    final favSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user!.uid)
-        .collection('favorites')
-        .get();
-
+  void _sortCafes(String sortType, List<CafeData> cafesToSort) {
     setState(() {
-      favoriteCafeTitles =
-          favSnapshot.docs.map((doc) => doc.id).toSet(); // Using doc id as cafe title
+      if (sortType == 'A-Z') {
+        cafesToSort.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+      } else if (sortType == 'Z-A') {
+        cafesToSort.sort((a, b) => b.title.toLowerCase().compareTo(a.title.toLowerCase()));
+      }
     });
   }
 
-  Future<void> _toggleFavorite(CafeData cafe) async {
+  void _sortAllCafes(String sortType) {
+    _sortCafes(sortType, allCafes);
+  }
+
+  void _sortNearbyCafes(String sortType) {
+    _sortCafes(sortType, nearbyCafes);
+  }
+
+  Future<void> _toggleFavorite(CafeData cafe, Set<String> favoriteCafeTitles) async {
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please log in to manage favorites')),
@@ -128,39 +127,51 @@ class _CafePageState extends State<CafePage> {
 
     if (isFav) {
       await favRef.delete();
-      setState(() {
-        favoriteCafeTitles.remove(cafe.title);
-      });
     } else {
       await favRef.set({
         'imagePath': cafe.imagePath,
         'subtitle': cafe.subtitle,
-        'rating': cafe.rating,
         'addedAt': FieldValue.serverTimestamp(),
       });
-      setState(() {
-        favoriteCafeTitles.add(cafe.title);
-      });
     }
+  }
+
+  Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
+    final isFavorite = favoriteCafeTitles.contains(cafe.title);
+
+    return GestureDetector(
+      onTap: () {
+        if (cafe.title == 'Arco Diez Cafe') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ArcoDiezPage()),
+          );
+        } else if (cafe.title == 'Harina Cafe') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const HarinaCafePage()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No details page yet for ${cafe.title}')),
+          );
+        }
+      },
+      child: CafeCard(
+        imagePath: cafe.imagePath,
+        title: cafe.title,
+        subtitle: cafe.subtitle,
+        isFavorite: isFavorite,
+        onFavoriteToggle: () => _toggleFavorite(cafe, favoriteCafeTitles),
+        user: user,
+      ),
+    );
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  // Build CafeCard widget from CafeData
-  Widget _buildCafeCard(CafeData cafe) {
-    final isFavorite = favoriteCafeTitles.contains(cafe.title);
-    return CafeCard(
-      imagePath: cafe.imagePath,
-      title: cafe.title,
-      subtitle: cafe.subtitle,
-      rating: cafe.rating,
-      isFavorite: isFavorite,
-      onFavoriteToggle: () => _toggleFavorite(cafe),
-    );
   }
 
   @override
@@ -172,84 +183,8 @@ class _CafePageState extends State<CafePage> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       resizeToAvoidBottomInset: false,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha((0.05 * 255).round()),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6.0),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.grey[800] : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Icon(
-                        Icons.arrow_back_ios,
-                        size: 18,
-                        color: Theme.of(context).iconTheme.color,
-                      ),
-                    ),
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset(
-                        'assets/logo.png',
-                        height: 24,
-                        width: 24,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Gala',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Poppins',
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Colors.white,
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundImage: userPhotoUrl != null
-                            ? NetworkImage(userPhotoUrl!)
-                            : const AssetImage('assets/user.png') as ImageProvider,
-                        backgroundColor: Colors.grey[100],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+      appBar: GalaHeader(
+        userPhotoUrl: userPhotoUrl,
       ),
       body: Column(
         children: [
@@ -349,10 +284,11 @@ class _CafePageState extends State<CafePage> {
                           ),
                           TextSpan(
                             text: ' in ${widget.locationName}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 32,
                               fontFamily: 'Inter',
                               fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : Colors.black,
                             ),
                           ),
                         ],
@@ -361,88 +297,66 @@ class _CafePageState extends State<CafePage> {
                   ),
                   const SizedBox(height: 32),
                   if (isSearching && isNaga) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2D9CDB).withAlpha((0.1 * 255).round()),
-                              borderRadius: BorderRadius.circular(8),
+                    StreamBuilder<Set<String>>(
+                      stream: favoriteCafeTitlesStream,
+                      builder: (context, snapshot) {
+                        final favoriteCafeTitles = snapshot.data ?? <String>{};
+                        if (_filteredCafes.isEmpty) {
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 60),
+                              child: Column(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(24),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Icon(
+                                      Icons.search_off,
+                                      size: 64,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    'No cafes found',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      color: Colors.grey[700],
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Try searching with different keywords',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[500],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.search,
-                              size: 20,
-                              color: Color(0xFF2D9CDB),
+                          );
+                        } else {
+                          return SizedBox(
+                            height: 190,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              itemCount: _filteredCafes.length,
+                              itemBuilder: (context, index) {
+                                final cafe = _filteredCafes[index];
+                                return _buildCafeCard(cafe, favoriteCafeTitles);
+                              },
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Search Results',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: Theme.of(context).textTheme.bodyLarge?.color,
-                            ),
-                          ),
-                        ],
-                      ),
+                          );
+                        }
+                      },
                     ),
-                    const SizedBox(height: 16),
-                    if (_filteredCafes.isEmpty)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 60),
-                          child: Column(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Icon(
-                                  Icons.search_off,
-                                  size: 64,
-                                  color: Colors.grey[400],
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              Text(
-                                'No cafes found',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  color: Colors.grey[700],
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Try searching with different keywords',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[500],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    else
-                      SizedBox(
-                        height: 190,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          itemCount: _filteredCafes.length,
-                          itemBuilder: (context, index) {
-                            final cafe = _filteredCafes[index];
-                            return _buildCafeCard(cafe);
-                          },
-                        ),
-                      ),
                   ],
                   if (!isSearching && isNaga) ...[
                     Padding(
@@ -455,13 +369,13 @@ class _CafePageState extends State<CafePage> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.orange.withAlpha((0.1 * 255).round()),
+                                  color: Colors.orange.withAlpha((0.13 * 255).round()),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.star,
                                   size: 20,
-                                  color: Colors.orange,
+                                  color: isDark ? Colors.yellow[400] : Colors.orange,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -470,48 +384,83 @@ class _CafePageState extends State<CafePage> {
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
-                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  color: isDark ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
                                 ),
                               ),
                             ],
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withAlpha((0.1 * 255).round()),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.blue.withAlpha((0.3 * 255).round()),
-                                width: 1,
-                              ),
+                          PopupMenuButton<String>(
+                            onSelected: _sortAllCafes,
+                            offset: const Offset(0, 40),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.sort, size: 16, color: Colors.blue),
-                                SizedBox(width: 6),
-                                Text(
-                                  'Sort by',
-                                  style: TextStyle(
-                                    color: Colors.blue,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
+                            itemBuilder: (BuildContext context) => [
+                              const PopupMenuItem<String>(
+                                value: 'A-Z',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.sort_by_alpha, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Sort A–Z'),
+                                  ],
                                 ),
-                              ],
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'Z-A',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.sort_by_alpha, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Sort Z–A'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withAlpha((0.1 * 255).round()),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.blue.withAlpha((0.3 * 255).round()),
+                                  width: 1,
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.sort, size: 16, color: Colors.blue),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Sort by',
+                                    style: TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      height: 190,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        children: allCafes.map(_buildCafeCard).toList(),
-                      ),
+                    StreamBuilder<Set<String>>(
+                      stream: favoriteCafeTitlesStream,
+                      builder: (context, snapshot) {
+                        final favoriteCafeTitles = snapshot.data ?? <String>{};
+                        return SizedBox(
+                          height: 190,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            children: allCafes.map((cafe) => _buildCafeCard(cafe, favoriteCafeTitles)).toList(),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 32),
                     Padding(
@@ -522,78 +471,100 @@ class _CafePageState extends State<CafePage> {
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(6), // reduced padding
+                                padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
                                   color: Colors.green.withAlpha((0.1 * 255).round()),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(
                                   Icons.location_on,
-                                  size: 18, // smaller icon size
+                                  size: 18,
                                   color: Colors.green,
                                 ),
                               ),
-                              const SizedBox(width: 8), // reduced spacing
+                              const SizedBox(width: 8),
                               Text(
                                 'Nearby You',
                                 style: TextStyle(
-                                  fontSize: 18, // smaller font size
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w700,
-                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  color: isDark ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
                                 ),
                               ),
                             ],
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), // smaller padding
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withAlpha((0.1 * 255).round()),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.blue.withAlpha((0.3 * 255).round()),
-                                width: 1,
-                              ),
+                          PopupMenuButton<String>(
+                            onSelected: _sortNearbyCafes,
+                            offset: const Offset(0, 40),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.location_on,
-                                  color: Colors.blue,
-                                  size: 14,
+                            itemBuilder: (BuildContext context) => [
+                              const PopupMenuItem<String>(
+                                value: 'A-Z',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.sort_by_alpha, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Sort A–Z'),
+                                  ],
                                 ),
-                                const SizedBox(width: 4), // reduced spacing
-                                Text(
-                                  widget.locationName,
-                                  style: const TextStyle(
-                                    color: Colors.blue,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12, // smaller font size
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'Z-A',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.sort_by_alpha, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Sort Z–A'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withAlpha((0.1 * 255).round()),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.blue.withAlpha((0.3 * 255).round()),
+                                  width: 1,
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.sort, size: 16, color: Colors.blue),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Sort by',
+                                    style: TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 6), // reduced spacing
-                                const Text(
-                                  'Change',
-                                  style: TextStyle(
-                                    color: Colors.blue,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      height: 190,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        children: nearbyCafes.map(_buildCafeCard).toList(),
-                      ),
+                    StreamBuilder<Set<String>>(
+                      stream: favoriteCafeTitlesStream,
+                      builder: (context, snapshot) {
+                        final favoriteCafeTitles = snapshot.data ?? <String>{};
+                        return SizedBox(
+                          height: 190,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            children: nearbyCafes.map((cafe) => _buildCafeCard(cafe, favoriteCafeTitles)).toList(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                   if (!isNaga)
@@ -718,7 +689,7 @@ class _CafePageState extends State<CafePage> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => profile.ProfilePage(
-                          username: user?.displayName ?? 'User   ',
+                          username: user?.displayName ?? 'User',
                           onSettingsTap: () {
                             Navigator.push(
                               context,
@@ -758,9 +729,7 @@ class _CafePageState extends State<CafePage> {
           vertical: screenWidth * 0.025,
         ),
         decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.blue.withOpacity(0.15)
-              : Colors.transparent,
+          color: isSelected ? Colors.blue.withOpacity(0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(25),
         ),
         child: AnimatedSwitcher(
@@ -783,13 +752,11 @@ class CafeData {
   final String imagePath;
   final String title;
   final String subtitle;
-  final double rating;
 
   const CafeData({
     required this.imagePath,
     required this.title,
     required this.subtitle,
-    required this.rating,
   });
 }
 
@@ -797,29 +764,213 @@ class CafeCard extends StatelessWidget {
   final String imagePath;
   final String title;
   final String subtitle;
-  final double rating;
   final bool isFavorite;
   final VoidCallback onFavoriteToggle;
+  final User? user;
 
   const CafeCard({
     super.key,
     required this.imagePath,
     required this.title,
     required this.subtitle,
-    required this.rating,
     required this.isFavorite,
     required this.onFavoriteToggle,
+    required this.user,
   });
+
+  Stream<({double? average, int count, int? userRating})> getRatingInfo() {
+    final ratingsRef = FirebaseFirestore.instance
+        .collection('cafes')
+        .doc(title)
+        .collection('ratings');
+    return ratingsRef.snapshots().map((snapshot) {
+      final docs = snapshot.docs;
+      if (docs.isEmpty) {
+        return (average: null, count: 0, userRating: null);
+      }
+      final ratings = docs.map((doc) => (doc.data()['rating'] ?? 0).toDouble()).toList();
+      double avg = ratings.reduce((a, b) => a + b) / ratings.length;
+      int? myRating;
+      if (user != null) {
+        final myDoc = docs.where((d) => d.id == user!.uid).toList();
+        if (myDoc.isNotEmpty) {
+          myRating = myDoc.first['rating'];
+        }
+      }
+      return (average: avg, count: docs.length, userRating: myRating);
+    });
+  }
+
+  void _showRatingDialog(BuildContext context, {int? yourRating}) {
+    int selectedRating = yourRating ?? 0;
+    bool hasRated = yourRating != null;
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black38,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final isEnabled = selectedRating != 0 && selectedRating != yourRating && !isSubmitting;
+            return Dialog(
+              backgroundColor: const Color(0xFFF8F8FF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Rate $title',
+                      style: const TextStyle(
+                        color: Color(0xFF0B55A0),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (i) {
+                        return IconButton(
+                          icon: Icon(
+                            i < selectedRating ? Icons.star : Icons.star_border,
+                            color: i < selectedRating ? const Color(0xFF0B55A0) : Colors.amber,
+                            size: 36,
+                          ),
+                          splashRadius: 24,
+                          onPressed: () => setDialogState(() {
+                            selectedRating = i + 1;
+                          }),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: Color(0xFF0B55A0),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: isEnabled
+                                ? () async {
+                                    setDialogState(() => isSubmitting = true);
+                                    if (user != null) {
+                                      final ratingRef = FirebaseFirestore.instance
+                                          .collection('cafes')
+                                          .doc(title)
+                                          .collection('ratings')
+                                          .doc(user!.uid);
+                                      await ratingRef.set({'rating': selectedRating});
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Thanks for rating $title!'),
+                                          backgroundColor: const Color(0xFF0B55A0),
+                                        ),
+                                      );
+                                    }
+                                    setDialogState(() => isSubmitting = false);
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isEnabled ? const Color(0xFF0B55A0) : Colors.grey[300],
+                              foregroundColor: isEnabled ? Colors.white : Colors.grey,
+                              shadowColor: Colors.transparent,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                            ),
+                            child: isSubmitting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Submit',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (hasRated)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: TextButton.icon(
+                          onPressed: isSubmitting
+                              ? null
+                              : () async {
+                                  if (user != null) {
+                                    final ratingRef = FirebaseFirestore.instance
+                                        .collection('cafes')
+                                        .doc(title)
+                                        .collection('ratings')
+                                        .doc(user!.uid);
+                                    await ratingRef.delete();
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text('Your rating was removed!'),
+                                        backgroundColor: Colors.grey[600],
+                                      ),
+                                    );
+                                  }
+                                },
+                          icon: const Icon(Icons.delete, color: Colors.redAccent),
+                          label: const Text(
+                            "Remove my rating",
+                            style: TextStyle(color: Colors.redAccent),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: 170,
       height: 190,
       margin: const EdgeInsets.only(right: 15),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: Colors.grey[200],
+        color: isDark ? Colors.white.withOpacity(0.09) : Colors.grey[200],
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -834,11 +985,30 @@ class CafeCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             child: Stack(
               children: [
-                Image.asset(
+                Image.network(
                   imagePath,
                   height: 250,
                   width: 170,
                   fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                         ? loadingProgress.cumulativeBytesLoaded /   
+                              loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[300],
+                      child: const Center(
+                        child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                      ),
+                    );
+                  },
                 ),
                 Container(
                   height: 300,
@@ -860,33 +1030,50 @@ class CafeCard extends StatelessWidget {
           Positioned(
             top: 12,
             right: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.star, size: 14, color: Colors.orange),
-                  const SizedBox(width: 4),
-                  Text(
-                    rating.toString(),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+            child: GestureDetector(
+              onTap: () async {
+                getRatingInfo().first.then((info) {
+                  _showRatingDialog(context, yourRating: info.userRating);
+                });
+              },
+              child: StreamBuilder<({double? average, int count, int? userRating})>(
+                stream: getRatingInfo(),
+                builder: (context, snapshot) {
+                  final info = snapshot.data;
+                  final showAverage = (info?.average != null && info!.count > 0);
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white : Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.13),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.star, size: 18, color: Colors.orange),
+                        const SizedBox(width: 4),
+                        Text(
+                          showAverage
+                              ? '${info.average!.toStringAsFixed(1)} Ratings'
+                              : 'Ratings',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.black : Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           ),

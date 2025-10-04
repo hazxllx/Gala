@@ -5,7 +5,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // Dummy pages for navigation
 class FavoritesScreen extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Scaffold(body: Center(child: Text('Favorites')));
+  Widget build(BuildContext context) => Scaffold(
+    body: Center(
+      child: Text(
+        'Favorites',
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onBackground,
+        ),
+      ),
+    ),
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+  );
 }
 
 class ProfilePage extends StatelessWidget {
@@ -16,13 +26,23 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(username)),
+        appBar: AppBar(
+          title: Text(
+            username,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+          ),
+          backgroundColor: Theme.of(context).primaryColor,
+          iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onPrimary),
+        ),
         body: Center(
           child: ElevatedButton(
             onPressed: onSettingsTap,
             child: Text('Settings'),
           ),
         ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       );
 }
 
@@ -30,7 +50,19 @@ class SettingsPage extends StatelessWidget {
   const SettingsPage();
 
   @override
-  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: Text('Settings')));
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: Text(
+        'Settings',
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onPrimary,
+        ),
+      ),
+      backgroundColor: Theme.of(context).primaryColor,
+      iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onPrimary),
+    ),
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+  );
 }
 
 class NotificationsPage extends StatefulWidget {
@@ -44,8 +76,6 @@ class NotificationsPage extends StatefulWidget {
 
 class _NotificationsPageState extends State<NotificationsPage> {
   String? _userPhotoUrl;
-  // ignore: unused_field
-  String _username = 'User';
 
   @override
   void initState() {
@@ -58,23 +88,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
     
     if (user != null) {
       try {
-        // Get user data from Firestore
         final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
         final data = doc.data();
-        
         if (mounted) {
           setState(() {
             _userPhotoUrl = data?['photoURL'] ?? user.photoURL;
-            _username = data?['username'] ?? user.displayName ?? widget.username ?? 'User';
           });
         }
       } catch (e) {
         debugPrint("Error fetching user data: $e");
-        // Fallback to Firebase Auth user data
         if (mounted) {
           setState(() {
             _userPhotoUrl = user.photoURL;
-            _username = user.displayName ?? widget.username ?? 'User';
           });
         }
       }
@@ -84,8 +109,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    // ignore: unused_local_variable
-    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -93,7 +116,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
         children: [
           // Custom AppBar
           Container(
-            padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 10, left: 16, right: 16, bottom: 10),
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 10,
+              left: 16,
+              right: 16,
+              bottom: 10,
+            ),
             color: Theme.of(context).scaffoldBackgroundColor,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -103,16 +131,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).iconTheme.color),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
-
                 // Title "Notifications"
-                Text(
-                  'Notifications',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                    color: Theme.of(context).textTheme.titleLarge?.color,
-                  ),
-                ),
+                    Text(
+            'Notifications',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
+          ),
 
                 // User Photo on the right - synced with real user data
                 CircleAvatar(
@@ -120,9 +147,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       ? NetworkImage(_userPhotoUrl!)
                       : const AssetImage('assets/user.png') as ImageProvider,
                   radius: 18,
-                  backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                  backgroundColor: isDark
+                      ? Colors.grey[800]
+                      : Colors.grey[200],
                   onBackgroundImageError: (exception, stackTrace) {
-                    // Fallback to default image if network image fails
                     debugPrint("Error loading user photo: $exception");
                   },
                 ),
@@ -134,7 +162,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(
-                left: 20, 
+                left: 20,
                 right: 20,
                 top: 20,
               ),
@@ -142,11 +170,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Today heading
-                  const Text(
+                  Text(
                     'Today',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onBackground,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -158,7 +187,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         'No notifications yet',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                     ),

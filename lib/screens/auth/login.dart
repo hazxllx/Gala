@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:my_project/screens/home/homepage.dart';
 import 'package:my_project/screens/auth/signup_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -20,7 +21,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(); // <-- CORRECT for v7.2.0
 
   @override
   Widget build(BuildContext context) {
@@ -290,6 +291,11 @@ class _LoginPageState extends State<LoginPage> {
       final data = userDoc.data();
       final firstName = data?['firstName'] ?? 'Explorer';
 
+      // SAVE LOGIN STATE AFTER SUCCESSFUL LOGIN
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('username', firstName);
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -345,6 +351,11 @@ class _LoginPageState extends State<LoginPage> {
 
       final data = userDoc.data();
       final firstName = data?['firstName'] ?? 'Explorer';
+
+      // SAVE LOGIN STATE AFTER SUCCESSFUL LOGIN
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('username', firstName);
 
       Navigator.pushReplacement(
         context,

@@ -95,18 +95,46 @@ class _HomePageState extends State<HomePage> {
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
             ),
-            Image.asset('assets/logo.png', height: screenHeight * 0.035),
+            // Logo image that switches in dark mode
+            Image.asset(
+              isDark ? 'assets/logo_white.png' : 'assets/logo.png',
+              height: isDark ? screenHeight * 0.05 : screenHeight * 0.035,
+              width: isDark ? screenHeight * 0.05 : null, // Optional: control width too
+              fit: BoxFit.contain,
+            ),
             SizedBox(width: screenWidth * 0.015),
-            Text(
-              "Gala",
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black,
-                fontSize: screenWidth * 0.05,
+            // Gradient "Gala" text using Sarina font
+            ShaderMask(
+              shaderCallback: (bounds) {
+                return LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  stops: [0.37, 1.0],
+                  colors: isDark
+                      ? [
+                          Color(0xFF58BCF1), // blue (dark mode)
+                          Color(0xFFFFFFFF), // white (dark mode)
+                        ]
+                      : [
+                          Color(0xFF041D66), // deep blue (light mode)
+                          Color(0xFF000000), // black (light mode)
+                        ],
+                ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height));
+              },
+              child: Text(
+                "Gala",
+                style: TextStyle(
+                  fontFamily: 'Sarina',
+                  fontSize: screenWidth * 0.055,
+                  fontWeight: FontWeight.normal,
+                  color: Colors.white, // required, but gets overridden by shader
+                  letterSpacing: 0.8,
+                ),
               ),
             ),
           ],
         ),
+
         actions: [
           IconButton(
             icon: Icon(

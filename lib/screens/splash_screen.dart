@@ -53,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   children: [
                     // Logo with responsive sizing
                     Image.asset(
-                      'assets/logoWhite.png',
+                      'assets/logo_white.png',
                       height: screenHeight * 0.25, // 25% of screen height
                       width: screenWidth * 0.8, // 80% of screen width
                       fit: BoxFit.contain,

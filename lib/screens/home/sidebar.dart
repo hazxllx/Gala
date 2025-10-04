@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Import favorites.dart with alias
 import 'package:my_project/screens/favorites.dart' as fav;
-// Alias the notifications.dart import to avoid naming conflict with SettingsPage
 import 'package:my_project/screens/notifications.dart' as notif;
 import 'package:my_project/screens/settings/settings.dart';
 
@@ -20,6 +18,10 @@ class Sidebar extends StatefulWidget {
 class _SidebarState extends State<Sidebar> {
   String _username = "User Not Found";
   String _email = "usernotfound23";
+  User? _user;
+
+  static const Color headerBlue = Color.fromARGB(146, 125, 179, 255);
+  static const Color iconAndTextColor = Color(0xFF23272F);
 
   @override
   void initState() {
@@ -28,87 +30,128 @@ class _SidebarState extends State<Sidebar> {
   }
 
   Future<void> _loadUserInfo() async {
-    final user = FirebaseAuth.instance.currentUser;
+    _user = FirebaseAuth.instance.currentUser;
 
-    if (user != null) {
+    if (_user != null) {
       try {
-        final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        final doc = await FirebaseFirestore.instance.collection('users').doc(_user!.uid).get();
         final data = doc.data();
 
         setState(() {
-          _username = data?['username'] ?? user.displayName ?? "No Name";
-          _email = user.email ?? "No Email";
+          _username = data?['username'] ?? _user!.displayName ?? "No Name";
+          _email = _user!.email ?? "No Email";
         });
       } catch (e) {
-        debugPrint("Error fetching user: $e");
+        debugPrint("Error fetching user info: $e");
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black;
-    final subTextColor = isDark ? Colors.grey[400] : Colors.grey[700];
-    final dividerColor = isDark ? Colors.grey[700] : Colors.black12;
-    final iconColor = textColor;
-
     return Drawer(
+      backgroundColor: Colors.white,
       child: Column(
         children: [
-          const SizedBox(height: 5),
-
-          /// 👤 User Profile Header
+          // --- HEADER ---
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 16),
-            color: Theme.of(context).drawerTheme.backgroundColor ?? Theme.of(context).canvasColor,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+            decoration: const BoxDecoration(
+              color: headerBlue,
+              borderRadius: BorderRadius.zero,
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x13000000),
+                  blurRadius: 5,
+                  offset: Offset(0, 1.5),
+                ),
+              ],
+            ),
             child: Row(
               children: [
-                const CircleAvatar(
-                  radius: 35,
-                  backgroundImage: AssetImage('assets/user.png'),
-                  backgroundColor: Colors.transparent,
+                CircleAvatar(
+                  radius: 34,
+                  backgroundImage: _user != null && _user!.photoURL != null
+                      ? NetworkImage(_user!.photoURL!)
+                      : const AssetImage('assets/user.png') as ImageProvider,
+                  backgroundColor: Colors.white,
                 ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _username,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _username,
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
+                          color: iconAndTextColor,
+                          letterSpacing: 0.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _email,
-                      style: TextStyle(fontSize: 14, color: subTextColor),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        _email,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: iconAndTextColor.withOpacity(0.65),
+                          fontWeight: FontWeight.w400,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-
-          /// 📋 Navigation
+          const SizedBox(height: 16),
+          // --- NAVIGATION ---
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                _buildSidebarItem(Icons.home, "Home", iconColor, textColor, () => _navigateTo(context, 0)),
-                _buildSidebarItem(Icons.explore, "Explore", iconColor, textColor, () => _navigateTo(context, 1)),
-                _buildSidebarItem(Icons.history, "History", iconColor, textColor, () => _navigateTo(context, 2)),
-                _buildSidebarItem(Icons.notifications, "Notifications", iconColor, textColor, () => _navigateTo(context, 3)),
-                _buildSidebarItem(Icons.bookmark, "Favorites", iconColor, textColor, () => _navigateTo(context, 4)),
-                _buildSidebarItem(Icons.person, "Profile", iconColor, textColor, () => _navigateTo(context, 5)),
-                _buildSidebarItem(Icons.settings, "Settings", iconColor, textColor, () => _navigateTo(context, 6)),
-
-                Divider(color: dividerColor),
-
-                /// 🔓 Logout
-                _buildSidebarItem(Icons.logout, "Logout", iconColor, textColor, _handleLogout),
+                _sidebarItem(
+                  icon: Icons.home,
+                  label: "Home",
+                  onTap: () => _navigateTo(context, 0),
+                ),
+                _sidebarItem(
+                  icon: Icons.notifications,
+                  label: "Notifications",
+                  onTap: () => _navigateTo(context, 1),
+                ),
+                _sidebarItem(
+                  icon: Icons.bookmark,
+                  label: "Favorites",
+                  onTap: () => _navigateTo(context, 2),
+                ),
+                _sidebarItem(
+                  icon: Icons.person,
+                  label: "Profile",
+                  onTap: () => _navigateTo(context, 3),
+                ),
+                _sidebarItem(
+                  icon: Icons.settings,
+                  label: "Settings",
+                  onTap: () => _navigateTo(context, 4),
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Divider(color: Colors.blueGrey, height: 20),
+                ),
+                _sidebarItem(
+                  icon: Icons.logout,
+                  label: "Logout",
+                  color: Colors.red[700],
+                  onTap: _handleLogout,
+                ),
               ],
             ),
           ),
@@ -117,68 +160,87 @@ class _SidebarState extends State<Sidebar> {
     );
   }
 
-  Widget _buildSidebarItem(
-    IconData icon,
-    String text,
-    Color iconColor,
-    Color textColor,
-    VoidCallback onTap,
-  ) {
-    return ListTile(
-      leading: Icon(icon, color: iconColor, size: 22),
-      title: Text(
-        text,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: textColor,
+  // COMPACT SIDEBAR ITEM
+  Widget _sidebarItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () {
+          Navigator.of(context).pop();
+          Future.delayed(const Duration(milliseconds: 100), onTap);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: color ?? iconAndTextColor,
+                size: 24,
+              ),
+              const SizedBox(width: 18),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: color ?? iconAndTextColor,
+                  letterSpacing: 0.1,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      onTap: onTap,
     );
   }
 
   void _navigateTo(BuildContext context, int index) {
-    Navigator.pop(context); // Close the drawer
     switch (index) {
       case 0:
         Navigator.pushNamed(context, '/homepage');
         break;
-      case 3:
-        // Navigate to NotificationsPage directly
+      case 1:
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const notif.NotificationsPage()),
         );
         break;
-      case 4:
-        // Navigate to FavoritesScreen directly
+      case 2:
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const fav.FavoritesScreen()),
         );
         break;
-      case 5:
+      case 3:
         Navigator.pushNamed(context, '/profile', arguments: {
           'onSettingsTap': () => Navigator.pushNamed(context, '/settings'),
         });
         break;
-      case 6:
+      case 4:
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const SettingsPage()),
         );
         break;
       default:
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Feature not implemented')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Feature not implemented')),
+        );
     }
   }
 
-  /// 🔐 Real logout logic
+  /// 🔐 Logout logic
   Future<void> _handleLogout() async {
     try {
       await FirebaseAuth.instance.signOut();
-      widget.onLogout(); // Callback to app for navigation or cleanup
+      widget.onLogout();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Logout failed: ${e.toString()}")),

@@ -49,7 +49,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/logoWhite.png
+    - assets/logo_white.png
     - assets/Gala.png
     - assets/logo.png
     - assets/logo1.png
@@ -68,16 +68,6 @@ flutter:
     - assets/cafe.png
     - assets/directions.png
     - assets/restaurant.png
-    - assets/arco_diez.jpeg
-    - assets/royaltea.png
-    - assets/kape_sina_una.jpeg
-    - assets/harina_cafe.jpeg
-    - assets/harina.jpeg
-    - assets/calle_barlin.png
-    - assets/bellissimo.png
-    - assets/tct.jpg
-    - assets/beanleaf.png
-    - assets/garden_cafe.jpeg
     - assets/login_background.png
     - assets/google_icon.png
     - assets/onboarding1.png
@@ -87,18 +77,10 @@ flutter:
     - assets/blueloc.png
     - assets/allow_loc.png
     - assets/success.png
-    - assets/images/arco_diez.jpg
-    - assets/images/tung.png
-    - assets/images/bomb.png
-    - assets/images/fsq.png
-    - assets/images/google.png
     - assets/images/lemon.png
     - assets/images/coffee.png
     - assets/images/menu1.png
     - assets/images/clatte.png
-    - assets/images/chimp.png
-    - assets/images/fb.png
-    - assets/images/arco_diez.jpg
     - assets/icons/location.png
     - assets/icons/tricycle.png
     - assets/icons/settings.png
@@ -106,6 +88,7 @@ flutter:
     - assets/icons/star_filled.png
     - assets/images/tea_bag.png
     - assets/images/chocolate.png
+    - assets/images/location.png
     - assets/images/matcha.png
     - assets/images/mlatte.png
     - assets/images/mclatte.png
@@ -122,5 +105,6 @@ flutter:
         - asset: assets/fonts/Inter_24pt-Regular.ttf
         - asset: assets/fonts/Inter_28pt-Bold.ttf
           weight: 700
-        - asset: assets/fonts/Inter_24pt-SemiBold.ttf
-          weight: 600
+    - family: Sarina
+      fonts:
+        - asset: assets/fonts/Sarina-Regular.ttf

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart'; 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -69,11 +68,9 @@ class _SignUpPageState extends State<SignUpPage> {
 
         await user.sendEmailVerification();
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('onboarding_completed', true); // Mark onboarding as completed
-
-        if (!mounted) return; // Ensure widget is mounted before navigating
-        Navigator.pushReplacementNamed(context, '/set_location'); // Navigate to set_location
+        // 🚩 DO NOT set onboarding_completed or isLoggedIn here!
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/set_location');
       } on FirebaseAuthException catch (e) {
         String message = _handleFirebaseError(e);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -120,18 +117,10 @@ class _SignUpPageState extends State<SignUpPage> {
             'photoUrl': user.photoURL ?? '',
             'createdAt': FieldValue.serverTimestamp(),
           });
-
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('onboarding_completed', true); // Mark onboarding as completed
-          if (!mounted) return; // Ensure widget is mounted before navigating
-          Navigator.pushReplacementNamed(context, '/set_location'); // Navigate to set_location
-        } else {
-          final prefs = await SharedPreferences.getInstance();
-          final onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
-          if (!mounted) return; // Ensure widget is mounted before navigating
-          Navigator.pushReplacementNamed(
-              context, onboardingCompleted ? '/homepage' : '/set_location');
         }
+        // 🚩 DO NOT set onboarding_completed or isLoggedIn here!
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/set_location');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

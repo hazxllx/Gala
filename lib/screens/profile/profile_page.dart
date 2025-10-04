@@ -33,6 +33,8 @@ class _ProfilePageState extends State<ProfilePage> {
     final userDoc =
         await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
+    if (!mounted) return;
+
     if (userDoc.exists) {
       final data = userDoc.data()!;
       setState(() {
@@ -51,9 +53,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Fetch screen size for responsive layouts
     final size = MediaQuery.of(context).size;
-    final safePaddingTop = MediaQuery.of(context).padding.top; // status bar height
+    final safePaddingTop = MediaQuery.of(context).padding.top;
 
     final fullName = (firstName + ' ' + lastName).trim().isEmpty
         ? 'User Not Found'
@@ -77,6 +78,13 @@ class _ProfilePageState extends State<ProfilePage> {
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
+            shadows: [
+              Shadow(
+                blurRadius: 6.0,
+                color: Colors.black54,
+                offset: Offset(1.0, 1.0),
+              ),
+            ],
           ),
         ),
         actions: [
@@ -96,7 +104,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       body: Stack(
         children: [
-          // Background image behind everything
+          // Background image
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -106,9 +114,9 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
 
-          // Main white panel - MOVED UP significantly
+          // Main white panel
           Positioned(
-            top: safePaddingTop + size.height * 0.18, // Moved up from bottom alignment
+            top: safePaddingTop + size.height * 0.18,
             left: 0,
             right: 0,
             bottom: 0,
@@ -116,7 +124,7 @@ class _ProfilePageState extends State<ProfilePage> {
               width: double.infinity,
               padding: EdgeInsets.symmetric(
                 horizontal: size.width * 0.07,
-                vertical: size.height * 0.03, // Reduced top padding
+                vertical: size.height * 0.03,
               ),
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -128,12 +136,11 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          SizedBox(height: size.height * 0.05), // Reduced from 0.07
-
+                          SizedBox(height: size.height * 0.05),
                           Text(
                             fullName,
                             style: TextStyle(
-                              fontSize: size.width * 0.055, // Responsive font size
+                              fontSize: size.width * 0.055,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
@@ -141,7 +148,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           SizedBox(height: size.height * 0.015),
 
                           SizedBox(
-                            width: size.width * 0.4, // Slightly smaller button
+                            width: size.width * 0.4,
                             height: size.height * 0.045,
                             child: ElevatedButton(
                               onPressed: () async {
@@ -177,21 +184,20 @@ class _ProfilePageState extends State<ProfilePage> {
                               child: Text(
                                 'Edit profile',
                                 style: TextStyle(
-                                  fontSize: size.width * 0.04, // Responsive font
+                                  fontSize: size.width * 0.04,
                                   color: Colors.white,
                                 ),
                               ),
                             ),
                           ),
-
-                          SizedBox(height: size.height * 0.06), // Reduced from 0.09
+                          SizedBox(height: size.height * 0.06),
 
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Account',
                               style: TextStyle(
-                                fontSize: size.width * 0.04, // Responsive font
+                                fontSize: size.width * 0.04,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.grey[800],
                               ),
@@ -204,7 +210,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             child: Text(
                               userName,
                               style: TextStyle(
-                                fontSize: size.width * 0.038, // Responsive font
+                                fontSize: size.width * 0.038,
                                 color: Colors.black87,
                               ),
                             ),
@@ -216,20 +222,20 @@ class _ProfilePageState extends State<ProfilePage> {
                             child: Text(
                               'Username',
                               style: TextStyle(
-                                fontSize: size.width * 0.035, // Responsive font
+                                fontSize: size.width * 0.035,
                                 color: Colors.black54,
                                 fontStyle: FontStyle.italic,
                               ),
                             ),
                           ),
-                          SizedBox(height: size.height * 0.04), // Reduced from 0.035
+                          SizedBox(height: size.height * 0.04),
 
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Your Activity',
                               style: TextStyle(
-                                fontSize: size.width * 0.04, // Responsive font
+                                fontSize: size.width * 0.04,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.grey[800],
                               ),
@@ -237,7 +243,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           SizedBox(height: size.height * 0.02),
 
-                          // Enhanced "No Activity yet" section
                           Container(
                             width: double.infinity,
                             padding: EdgeInsets.symmetric(
@@ -281,17 +286,17 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
 
-                          SizedBox(height: size.height * 0.05), // Reduced from 0.07
+                          SizedBox(height: size.height * 0.05),
                         ],
                       ),
                     ),
             ),
           ),
 
-          // Profile avatar circle - MOVED UP to match container position
+          // Profile avatar circle
           Positioned(
-            top: safePaddingTop + size.height * 0.10, // Moved up significantly
-            left: (size.width / 2) - (size.width * 0.12), // Responsive positioning
+            top: safePaddingTop + size.height * 0.10,
+            left: (size.width / 2) - (size.width * 0.12),
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -308,7 +313,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
               child: CircleAvatar(
-                radius: size.width * 0.12, // Responsive radius
+                radius: size.width * 0.12,
                 backgroundColor: Colors.white,
                 backgroundImage: photoUrl.isNotEmpty
                     ? NetworkImage(photoUrl)

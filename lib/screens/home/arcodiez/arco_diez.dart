@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'arcodiez_menu.dart';
 import 'arcodiez_route.dart';
 import 'arcodiez_reviews.dart';
@@ -12,7 +15,55 @@ class ArcoDiezPage extends StatefulWidget {
 
 class _ArcoDiezPageState extends State<ArcoDiezPage> {
   bool isFavorited = false;
-  int selectedStars = 0; // <--- THIS for rating selection
+  int selectedStars = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfFavorited();
+  }
+
+  void _checkIfFavorited() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('favorites')
+          .doc('Arco Diez Cafe')
+          .get();
+      if (mounted) {
+        setState(() {
+          isFavorited = doc.exists;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleFavoriteToggle() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final favoritesDoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites')
+        .doc('Arco Diez Cafe');
+
+    if (!isFavorited) {
+      await favoritesDoc.set({
+        'imagePath': 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_diez.jpeg',
+        'subtitle': 'Km. 10 Pacol Rd',
+        'rating': 5,
+      });
+    } else {
+      await favoritesDoc.delete();
+    }
+
+    setState(() {
+      isFavorited = !isFavorited;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +71,6 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Background Image
           Positioned(
             top: -70,
             left: 0,
@@ -30,7 +80,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
               width: double.infinity,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/images/arco_diez.jpg'),
+                  image: NetworkImage('https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_diez.jpg'),
                   fit: BoxFit.cover,
                   colorFilter: ColorFilter.mode(
                     Colors.black.withOpacity(0.2),
@@ -40,8 +90,6 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
               ),
             ),
           ),
-
-          // Scrollable White Container
           Positioned(
             top: 360,
             left: 0,
@@ -60,8 +108,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // About Section
-                    Text(
+                    const Text(
                       'About',
                       style: TextStyle(
                         fontFamily: 'Inter',
@@ -70,8 +117,8 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                         color: Colors.black,
                       ),
                     ),
-                    SizedBox(height: 12),
-                    Text(
+                    const SizedBox(height: 12),
+                    const Text(
                       'Arco Diez Cafe is a cozy, family-friendly spot in Pacol, Naga City, serving farm-to-cup coffee and homemade dishes. '
                       'Committed to quality, transparency, and sustainability, the cafe values the hard work of coffee farmers while providing '
                       'a relaxing space for customers to enjoy great coffee and food.',
@@ -83,10 +130,8 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                         height: 1.5,
                       ),
                     ),
-                    SizedBox(height: 24),
-
-                    // Business Hours
-                    Text(
+                    const SizedBox(height: 24),
+                    const Text(
                       'Business Hours',
                       style: TextStyle(
                         fontFamily: 'Inter',
@@ -95,23 +140,18 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                         color: Colors.black,
                       ),
                     ),
-                    SizedBox(height: 18),
-
-                    // Business Hours Row
+                    const SizedBox(height: 18),
                     SizedBox(
                       height: 105,
                       child: Row(
                         children: [
                           _buildClosedBox(),
-                          SizedBox(width: 16),
+                          const SizedBox(width: 16),
                           _buildOpenBox(),
                         ],
                       ),
                     ),
-
-                    SizedBox(height: 24),
-
-                    // Option Tiles
+                    const SizedBox(height: 24),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/location.png',
@@ -126,7 +166,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/menu.png',
-                      'View Arco Diez’s Menu',
+                      'View Arco Diez\'s Menu',
                       () {
                         Navigator.push(
                           context,
@@ -136,7 +176,6 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                         );
                       },
                     ),
-                    // Give it a rate (with interactive stars beside)
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/star_filled.png',
@@ -145,7 +184,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const ReviewPage(),
+                            builder: (context) => ReviewPage(cafeTitle: "Arco Diez Cafe"),
                           ),
                         );
                       },
@@ -155,8 +194,6 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
               ),
             ),
           ),
-
-          // Cafe Name and Address
           Positioned(
             top: 260,
             left: 32,
@@ -164,7 +201,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Arco Diez Cafe',
                   style: TextStyle(
                     fontFamily: 'Inter',
@@ -173,14 +210,14 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 5),
+                const SizedBox(height: 5),
                 Row(
                   children: [
-                    Icon(Icons.location_on, color: Colors.white, size: 18),
-                    SizedBox(width: 4),
+                    const Icon(Icons.location_on, color: Colors.white, size: 18),
+                    const SizedBox(width: 4),
                     Expanded(
-                      child: Text(
-                        'Km. 10 Pacol Rd, Naga, 4400 Camarines Sur',
+                      child: const Text(
+                        'Km. 10 Pacol Rd, Naga City, 4400 Camarines Sur',
                         style: TextStyle(
                           fontFamily: 'Inter',
                           color: Colors.white,
@@ -194,43 +231,30 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
               ],
             ),
           ),
-
-          // Back Button
           Positioned(
             top: 60,
             left: 20,
             child: IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.white),
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () {
                 Navigator.pop(context);
               },
             ),
           ),
-
-          // Favorite Button with toggle
           Positioned(
             top: 60,
             right: 24,
             child: ElevatedButton.icon(
-              onPressed: () {
-                setState(() {
-                  isFavorited = !isFavorited;
-                });
+              onPressed: () async {
+                await _handleFavoriteToggle();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    isFavorited
-                        ? const Color.fromARGB(255, 13, 71, 118)
-                        : Colors.white, // <-- bg color change
-                foregroundColor:
-                    isFavorited
-                        ? Colors.white
-                        : Color.fromARGB(
-                          255,
-                          7,
-                          90,
-                          158,
-                        ), // <-- text and icon color change
+                backgroundColor: isFavorited
+                    ? const Color.fromARGB(255, 13, 71, 118)
+                    : Colors.white,
+                foregroundColor: isFavorited
+                    ? Colors.white
+                    : const Color.fromARGB(255, 7, 90, 158),
               ),
               icon: Icon(isFavorited ? Icons.check : Icons.favorite_border),
               label: Text(isFavorited ? 'Added' : 'Add to favorite'),
@@ -241,7 +265,6 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
     );
   }
 
-  // --- Helper Widgets ---
   Widget _buildClosedBox() {
     return Flexible(
       flex: 5,
@@ -249,7 +272,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.black12,
               blurRadius: 10,
@@ -262,15 +285,15 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
           children: [
             Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.grey[300],
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(15),
                   topRight: Radius.circular(15),
                 ),
               ),
-              child: Center(
+              child: const Center(
                 child: Text(
                   'Closed',
                   style: TextStyle(
@@ -287,7 +310,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text('Monday', style: _dayTextStyleHighlighted()),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text('Tuesday', style: _dayTextStyleHighlighted()),
                   ],
                 ),
@@ -306,7 +329,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.black12,
               blurRadius: 10,
@@ -319,15 +342,15 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
           children: [
             Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: const BoxDecoration(
                 color: Color.fromARGB(255, 10, 70, 144),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(15),
                   topRight: Radius.circular(15),
                 ),
               ),
-              child: Center(
+              child: const Center(
                 child: Text(
                   'Open',
                   style: TextStyle(
@@ -346,7 +369,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text('10AM - 9PM', style: _openTimeTextStyle()),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text('Wed to Fri', style: _dayTextStyleSmall()),
                     ],
                   ),
@@ -354,7 +377,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text('7AM - 9PM', style: _openTimeTextStyle()),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text('Sat & Sun', style: _dayTextStyleSmall()),
                     ],
                   ),
@@ -382,7 +405,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
                 color: Colors.black12,
                 blurRadius: 10,
@@ -403,7 +426,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
               Expanded(
                 child: Text(
                   text,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
@@ -411,7 +434,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                   ),
                 ),
               ),
-              Icon(Icons.chevron_right, color: Colors.black45, size: 28),
+              const Icon(Icons.chevron_right, color: Colors.black45, size: 28),
             ],
           ),
         ),
@@ -420,11 +443,11 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
   }
 
   TextStyle _dayTextStyleSmall() {
-    return TextStyle(fontFamily: 'Inter', fontSize: 11, color: Colors.black54);
+    return const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Colors.black54);
   }
 
   TextStyle _openTimeTextStyle() {
-    return TextStyle(
+    return const TextStyle(
       fontFamily: 'Inter',
       fontWeight: FontWeight.bold,
       fontSize: 13,
@@ -432,11 +455,11 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
   }
 
   TextStyle _dayTextStyleHighlighted() {
-    return TextStyle(
+    return const TextStyle(
       fontFamily: 'Inter',
       fontSize: 13,
       color: Colors.black,
-      fontWeight: FontWeight.w600, // Extra bold
+      fontWeight: FontWeight.w600,
     );
   }
 }

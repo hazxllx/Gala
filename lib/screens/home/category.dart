@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:my_project/screens/home/cafe.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:my_project/screens/home/cafe.dart' as naga;
+import 'package:my_project/screens/home/pili_cafe/pili_cafe.dart' as pili;
+import 'package:my_project/screens/home/naga_bars.dart' as bars;
+import 'package:my_project/screens/home/header.dart';
 
-/// CategoryScreen displays a list of categories for a specific location.
-/// It allows users to search and navigate to different categories like Cafes, Restaurants, etc.
 class CategoryScreen extends StatefulWidget {
   final String locationName;
-
   const CategoryScreen({super.key, required this.locationName});
-
+  
   @override
   State<CategoryScreen> createState() => _CategoryScreenState();
 }
@@ -16,152 +17,105 @@ class _CategoryScreenState extends State<CategoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> filteredCategories = [];
   final List<Map<String, dynamic>> allCategories = [];
+  User? user;
 
   @override
   void initState() {
     super.initState();
 
-    // List of all categories available
+    user = FirebaseAuth.instance.currentUser;
+
     allCategories.addAll([
       {
         "image": 'assets/cafe.png',
         "name": "Cafes",
         "onTap": (BuildContext context, String locationName) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CafePage(locationName: locationName),
-            ),
-          );
+          // Check if location is Pili
+          if (locationName.toLowerCase().contains('pili')) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => pili.CafePage(locationName: locationName),
+              ),
+            );
+          } else {
+            // For other locations (like Naga), use the original CafePage
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => naga.CafePage(locationName: locationName),
+              ),
+            );
+          }
         },
       },
       {"image": 'assets/ffchains.png', "name": "Fast Food Chains"},
       {"image": 'assets/restaurant.png', "name": "Restaurants"},
-      {"image": 'assets/inuman.png', "name": "Bars"},
+      {
+        "image": 'assets/inuman.png',
+        "name": "Bars",
+        "onTap": (BuildContext context, String locationName) {
+          // Navigate to bars page (currently only Naga has bars)
+          if (locationName.toLowerCase().contains('naga')) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => bars.BarsPage(locationName: locationName),
+              ),
+            );
+          } else {
+            // Show message if no bars available for other locations
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Bars not available for $locationName yet'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        },
+      },
     ]);
-
     filteredCategories = allCategories;
 
-    // Listen to the search input and filter categories based on it
     _searchController.addListener(() {
       final query = _searchController.text.toLowerCase();
       setState(() {
-        filteredCategories =
-            allCategories
-                .where(
-                  (cat) => cat['name'].toString().toLowerCase().contains(query),
-                )
-                .toList();
+        filteredCategories = allCategories
+            .where((cat) => cat['name'].toString().toLowerCase().contains(query))
+            .toList();
       });
+    });
+  }
+
+  void _sortCategories(String sortType) {
+    setState(() {
+      if (sortType == 'A-Z') {
+        filteredCategories.sort((a, b) => 
+            a['name'].toString().toLowerCase().compareTo(b['name'].toString().toLowerCase()));
+      } else if (sortType == 'Z-A') {
+        filteredCategories.sort((a, b) => 
+            b['name'].toString().toLowerCase().compareTo(a['name'].toString().toLowerCase()));
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Check if dark mode is enabled
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDarkMode ? Colors.white : Colors.black;
-    final bgColor =
-        isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FB);
+    final bgColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FB);
     final cardColor = isDarkMode ? Colors.grey[900] : Colors.white;
 
     return Scaffold(
       backgroundColor: bgColor,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100), // Increased height for better spacing
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDarkMode ? Colors.black : Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0), // Better padding
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Back button with improved styling
-                  Container(
-                    padding: const EdgeInsets.all(10.0),
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Icon(
-                        Icons.arrow_back_ios,
-                        size: 20,
-                        color: textColor,
-                      ),
-                    ),
-                  ),
-                  
-                  // Logo and Gala text with better spacing
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Image.asset(
-                          'assets/logo.png', 
-                          height: 32,
-                          width: 32,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        "Gala",
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w700,
-                          color: textColor,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  // Profile picture with enhanced styling
-                  Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                      ],
-                    ),
-                    child: CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Colors.white,
-                      child: CircleAvatar(
-                        radius: 20,
-                        backgroundImage: const AssetImage('assets/user.png'),
-                        backgroundColor: Colors.grey[100],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+      appBar: GalaHeader(
+        userPhotoUrl: user?.photoURL,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: ListView(
           children: [
-            const SizedBox(height: 20), // Increased spacing
-            // Search bar for filtering categories with improved styling
+            const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
@@ -182,7 +136,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
               child: Row(
                 children: [
                   Icon(
-                    Icons.search, 
+                    Icons.search,
                     color: Colors.grey[500],
                     size: 22,
                   ),
@@ -226,7 +180,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 32), // Better spacing
+            const SizedBox(height: 32),
             Text(
               "Where do you want to go?",
               style: TextStyle(
@@ -248,74 +202,99 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     color: textColor,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.blue.withOpacity(0.3),
-                      width: 1,
-                    ),
+                PopupMenuButton<String>(
+                  onSelected: _sortCategories,
+                  offset: const Offset(0, 40),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(Icons.sort, size: 16, color: Colors.blue),
-                      SizedBox(width: 6),
-                      Text(
-                        "Sort by",
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
+                  itemBuilder: (BuildContext context) => [
+                    const PopupMenuItem<String>(
+                      value: 'A-Z',
+                      child: Row(
+                        children: [
+                          Icon(Icons.sort_by_alpha, size: 16),
+                          SizedBox(width: 8),
+                          Text('Sort A–Z'),
+                        ],
                       ),
-                    ],
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'Z-A',
+                      child: Row(
+                        children: [
+                          Icon(Icons.sort_by_alpha, size: 16),
+                          SizedBox(width: 8),
+                          Text('Sort Z–A'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.blue.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.sort, size: 16, color: Colors.blue),
+                        SizedBox(width: 6),
+                        Text(
+                          "Sort by",
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            // Categories listed horizontally
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children:
-                    filteredCategories.map((category) {
-                      return Row(
-                        children: [
-                          CategoryCard(
-                            image: category['image'],
-                            name: category['name'],
-                            onTap: () {
-                              if (category.containsKey('onTap')) {
-                                category['onTap'](context, widget.locationName);
-                              }
-                            },
-                            isDarkMode: isDarkMode,
-                            textColor:
-                                category['name'] == 'Cafes'
+                children: filteredCategories.map((category) {
+                  return Row(
+                    children: [
+                      CategoryCard(
+                        image: category['image'],
+                        name: category['name'],
+                        onTap: () {
+                          if (category.containsKey('onTap')) {
+                            category['onTap'](context, widget.locationName);
+                          }
+                        },
+                        isDarkMode: isDarkMode,
+                        textColor: category['name'] == 'Cafes'
+                            ? (isDarkMode
+                                ? const Color.fromARGB(255, 244, 194, 171)
+                                : const Color.fromARGB(255, 184, 101, 71))
+                            : category['name'] == 'Bars'
+                                ? (isDarkMode
+                                    ? const Color.fromARGB(255, 149, 239, 167)
+                                    : const Color.fromARGB(255, 31, 166, 35))
+                                : category['name'] == 'Fast Food Chains'
                                     ? (isDarkMode
-                                        ? Color.fromARGB(255, 244, 194, 171)
-                                        : Color.fromARGB(255, 184, 101, 71))
-                                    : category['name'] == 'Bars'
-                                    ? (isDarkMode
-                                        ? Color.fromARGB(255, 149, 239, 167)
-                                        : Color.fromARGB(255, 31, 166, 35))
-                                    : category['name'] == 'Fast Food Chains'
-                                    ? (isDarkMode
-                                        ? Color.fromARGB(255, 255, 125, 118)
-                                        : Color.fromARGB(255, 211, 41, 28))
+                                        ? const Color.fromARGB(255, 255, 125, 118)
+                                        : const Color.fromARGB(255, 211, 41, 28))
                                     : (isDarkMode
-                                        ? Color.fromARGB(255, 174, 151, 255)
-                                        : Color.fromARGB(255, 44, 13, 98)),
-                            // Default for "Restaurants"
-                          ),
-                          const SizedBox(width: 12),
-                        ],
-                      );
-                    }).toList(),
+                                        ? const Color.fromARGB(255, 174, 151, 255)
+                                        : const Color.fromARGB(255, 44, 13, 98)),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                  );
+                }).toList(),
               ),
             ),
             const SizedBox(height: 32),
@@ -328,7 +307,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            // Action buttons with improved styling
             ActionButton(
               icon: 'assets/nearby.png',
               label: "Find nearby places",
@@ -354,29 +332,24 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 }
 
-/// CategoryCard displays a category with an image and name.
-/// When tapped, it triggers the provided `onTap` function.
 class CategoryCard extends StatelessWidget {
   final String image;
   final String name;
   final VoidCallback onTap;
   final bool isDarkMode;
-
-  // Optional parameters to control size with defaults
   final double width;
   final double height;
-
-  final Color textColor; // NEW
-
+  final Color textColor;
+  
   const CategoryCard({
     super.key,
     required this.image,
     required this.name,
     required this.onTap,
     required this.isDarkMode,
-    required this.textColor, // NEW
-    this.width = 155, // Increased from 145 to accommodate larger images
-    this.height = 170, // Increased from 155 to accommodate larger images
+    required this.textColor,
+    this.width = 155,
+    this.height = 170,
   });
 
   @override
@@ -407,9 +380,9 @@ class CategoryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               child: Image.asset(
-                image, 
-                width: 125, // Increased from 100 to 110 (+10)
-                height: 125, // Increased from 100 to 110 (+10)
+                image,
+                width: 125,
+                height: 125,
                 fit: BoxFit.contain,
               ),
             ),
@@ -436,13 +409,11 @@ class CategoryCard extends StatelessWidget {
   }
 }
 
-/// ActionButton displays an action item with an icon and label.
-/// It represents actions like finding nearby places or getting directions.
 class ActionButton extends StatelessWidget {
   final String icon;
   final String label;
   final bool isDarkMode;
-
+  
   const ActionButton({
     super.key,
     required this.icon,
@@ -478,10 +449,10 @@ class ActionButton extends StatelessWidget {
               color: const Color(0xFF2D9CDB).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-                        child: Image.asset(
-              icon, 
-              height: 40, // Increased from 32 to 37 (+5)
-              width: 40, // Increased from 32 to 37 (+5)
+            child: Image.asset(
+              icon,
+              height: 40,
+              width: 40,
             ),
           ),
           const SizedBox(width: 16),

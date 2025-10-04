@@ -1,4 +1,3 @@
-// --- NO CHANGES TO IMPORTS
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -86,7 +85,7 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  height: 140, // Reduced height to move elements up
+                  height: 110,
                   child: Row(
                     children: [
                       IconButton(
@@ -108,118 +107,147 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.only(bottom: 24), // Reduced bottom padding
-                    child: Column(
-                      children: [
-                        buildSection(
-                          'Account',
-                          [
-                            SettingItem(
-                              icon: Icons.lock_outline,
-                              title: 'Change Password',
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const ChangePasswordPage(),
-                                  ),
-                                );
-                              },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? theme.cardColor.withOpacity(0.98)
+                          : Colors.white.withOpacity(0.97),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 16,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            buildSection(
+                              'Account',
+                              [
+                                SettingItem(
+                                  icon: Icons.lock_outline,
+                                  title: 'Change Password',
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const ChangePasswordPage(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                SwitchSettingItem(
+                                  icon: Icons.notifications_none,
+                                  title: 'Notifications',
+                                  value: notificationsEnabled,
+                                  onChanged: _toggleNotifications,
+                                ),
+                                SettingItem(
+                                  icon: Icons.privacy_tip_outlined,
+                                  title: 'Privacy',
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => PrivacySettingsPage(
+                                          locationEnabled: locationEnabled,
+                                          dataCollectionEnabled:
+                                              dataCollectionEnabled,
+                                          analyticsEnabled: analyticsEnabled,
+                                          onSettingsChanged: (
+                                            location,
+                                            dataCollection,
+                                            analytics,
+                                          ) async {
+                                            setState(() {
+                                              locationEnabled = location;
+                                              dataCollectionEnabled =
+                                                  dataCollection;
+                                              analyticsEnabled = analytics;
+                                            });
+                                            await _saveSetting(
+                                                'location_enabled', location);
+                                            await _saveSetting(
+                                                'data_collection_enabled',
+                                                dataCollection);
+                                            await _saveSetting(
+                                                'analytics_enabled', analytics);
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                              isDark,
+                              theme,
                             ),
-                            SwitchSettingItem(
-                              icon: Icons.notifications_none,
-                              title: 'Notifications',
-                              value: notificationsEnabled,
-                              onChanged: _toggleNotifications,
+                            buildSection(
+                              'Preferences',
+                              [
+                                SwitchSettingItem(
+                                  icon: Icons.dark_mode_outlined,
+                                  title: 'Dark Mode',
+                                  value: isDark,
+                                  onChanged: (val) async {
+                                    themeProvider.toggleTheme();
+                                    await _saveSetting('dark_mode', val);
+                                    showMessage(
+                                      context,
+                                      "Dark mode ${val ? 'enabled' : 'disabled'}",
+                                    );
+                                  },
+                                ),
+                              ],
+                              isDark,
+                              theme,
                             ),
-                            SettingItem(
-                              icon: Icons.privacy_tip_outlined,
-                              title: 'Privacy',
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => PrivacySettingsPage(
-                                      locationEnabled: locationEnabled,
-                                      dataCollectionEnabled: dataCollectionEnabled,
-                                      analyticsEnabled: analyticsEnabled,
-                                      onSettingsChanged: (
-                                        location,
-                                        dataCollection,
-                                        analytics,
-                                      ) async {
-                                        setState(() {
-                                          locationEnabled = location;
-                                          dataCollectionEnabled = dataCollection;
-                                          analyticsEnabled = analytics;
-                                        });
-                                        await _saveSetting('location_enabled', location);
-                                        await _saveSetting('data_collection_enabled', dataCollection);
-                                        await _saveSetting('analytics_enabled', analytics);
-                                      },
-                                    ),
-                                  ),
-                                );
-                              },
+                            buildSection(
+                              'Actions',
+                              [
+                                SettingItem(
+                                  icon: Icons.flag_outlined,
+                                  title: 'Report a problem',
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const ReportProblemPage(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                              isDark,
+                              theme,
                             ),
-                            SettingItem(
-                              icon: Icons.store_mall_directory_outlined,
-                              title: 'Apply as a Business Owner',
-                              onTap: () {
-                                showMessage(context, "Apply flow coming soon...");
-                              },
+                            const SizedBox(height: 32),
+                            Center(
+                              child: Text(
+                                'Gala App v1.0.0',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: isDark
+                                      ? Colors.grey.shade300
+                                      : Colors.grey.shade600,
+                                ),
+                              ),
                             ),
+                            const SizedBox(height: 16),
                           ],
-                          isDark,
-                          theme,
                         ),
-                        const SizedBox(height: 8), // Reduced space between sections
-                        buildSection(
-                          'Preferences',
-                          [
-                            SwitchSettingItem(
-                              icon: Icons.dark_mode_outlined,
-                              title: 'Dark Mode',
-                              value: isDark,
-                              onChanged: (val) async {
-                                themeProvider.toggleTheme();
-                                await _saveSetting('dark_mode', val);
-                                showMessage(context, "Dark mode ${val ? 'enabled' : 'disabled'}");
-                              },
-                            ),
-                          ],
-                          isDark,
-                          theme,
-                        ),
-                        const SizedBox(height: 8), // Reduced space between sections
-                        buildSection(
-                          'Actions',
-                          [
-                            SettingItem(
-                              icon: Icons.flag_outlined,
-                              title: 'Report a problem',
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const ReportProblemPage(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                          isDark,
-                          theme,
-                        ),
-                        const SizedBox(height: 16), // Reduced bottom space
-                        Text(
-                          'Gala App v1.0.0',
-                          style: TextStyle(
-                            color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -231,45 +259,48 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget buildSection(String title, List<Widget> items, bool isDark, ThemeData theme) {
+  Widget buildSection(
+      String title, List<Widget> items, bool isDark, ThemeData theme) {
     return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       decoration: BoxDecoration(
-        color: isDark ? theme.cardColor.withOpacity(0.85) : Colors.white.withOpacity(0.9),
+        color: isDark ? theme.cardColor.withOpacity(0.98) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
+          if (!isDark)
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 8, bottom: 8),
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black,
-                ),
-              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black,
             ),
-            ...items,
-          ],
-        ),
+          ),
+          const SizedBox(height: 10),
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: item,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
+// === Item Widgets (unchanged logic) ===
 
 class SettingItem extends StatelessWidget {
   final IconData icon;
@@ -294,11 +325,12 @@ class SettingItem extends StatelessWidget {
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-      leading: Icon(icon, color: theme.colorScheme.primary),
+      leading: Icon(icon, color: theme.colorScheme.primary, size: 26),
       title: Text(
         title,
         style: TextStyle(
           fontSize: 16,
+          fontWeight: FontWeight.w500,
           color: titleColor ?? (isDark ? Colors.white : Colors.black),
         ),
       ),
@@ -313,7 +345,7 @@ class SettingItem extends StatelessWidget {
       trailing: Icon(
         Icons.arrow_forward_ios,
         size: 16,
-        color: isDark ? Colors.white54 : Colors.grey,
+        color: isDark ? Colors.white54 : Colors.grey.shade500,
       ),
       onTap: onTap,
     );
@@ -341,11 +373,12 @@ class SwitchSettingItem extends StatelessWidget {
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-      leading: Icon(icon, color: theme.colorScheme.primary),
+      leading: Icon(icon, color: theme.colorScheme.primary, size: 26),
       title: Text(
         title,
         style: TextStyle(
           fontSize: 16,
+          fontWeight: FontWeight.w500,
           color: isDark ? Colors.white : Colors.black,
         ),
       ),

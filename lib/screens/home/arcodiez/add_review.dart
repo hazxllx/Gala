@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class AddReviewPage extends StatefulWidget {
-  const AddReviewPage({super.key});
+  final String cafeTitle;
+  const AddReviewPage({super.key, required this.cafeTitle});
 
   @override
   State<AddReviewPage> createState() => _AddReviewPageState();
@@ -11,20 +15,91 @@ class AddReviewPage extends StatefulWidget {
 
 class _AddReviewPageState extends State<AddReviewPage> {
   int selectedRating = 0;
-
   final TextEditingController _commentController = TextEditingController();
-
   File? _selectedImage;
+  bool isSubmitting = false;
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
     if (pickedFile != null) {
       setState(() {
         _selectedImage = File(pickedFile.path);
       });
     }
+  }
+
+  Future<String?> _uploadImage(File file) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+    final storageRef = FirebaseStorage.instance
+        .ref()
+        .child('reviews/${widget.cafeTitle}/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+    final uploadTask = storageRef.putFile(file);
+    final snapshot = await uploadTask.whenComplete(() => null);
+    return await snapshot.ref.getDownloadURL();
+  }
+
+  Future<void> _submitReview() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to submit a review.')),
+      );
+      return;
+    }
+    if (selectedRating == 0 || _commentController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please provide a rating and a comment.')),
+      );
+      return;
+    }
+    setState(() => isSubmitting = true);
+
+    String? imageUrl;
+    if (_selectedImage != null) {
+      imageUrl = await _uploadImage(_selectedImage!);
+    }
+
+    // Save review in Firestore (multiple reviews per user allowed)
+    await FirebaseFirestore.instance
+        .collection('cafes')
+        .doc(widget.cafeTitle)
+        .collection('reviews')
+        .add({
+      'rating': selectedRating,
+      'comment': _commentController.text.trim(),
+      'imageUrl': imageUrl ?? '',
+      'userId': user.uid,
+      'userName': user.displayName ?? 'Anonymous',
+      'userPhotoUrl': user.photoURL ?? '',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    setState(() => isSubmitting = false);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Thank You!'),
+        content: Text('Your review has been submitted successfully.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // close dialog
+              Navigator.pop(context); // pop review page
+              setState(() {
+                selectedRating = 0;
+                _commentController.clear();
+                _selectedImage = null;
+              });
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -47,7 +122,6 @@ class _AddReviewPageState extends State<AddReviewPage> {
               ),
             ),
           ),
-
           // Review Content
           Positioned.fill(
             top: 200,
@@ -72,7 +146,6 @@ class _AddReviewPageState extends State<AddReviewPage> {
                       ),
                     ),
                     SizedBox(height: 12),
-
                     // Stars
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -81,10 +154,9 @@ class _AddReviewPageState extends State<AddReviewPage> {
                           icon: Icon(
                             Icons.star,
                             size: 32,
-                            color:
-                                selectedRating > index
-                                    ? Color(0xFF0B55A0)
-                                    : Colors.grey[300],
+                            color: selectedRating > index
+                                ? Color(0xFF0B55A0)
+                                : Colors.grey[300],
                           ),
                           onPressed: () {
                             setState(() {
@@ -94,7 +166,6 @@ class _AddReviewPageState extends State<AddReviewPage> {
                         );
                       }),
                     ),
-
                     // Labels under stars
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -107,33 +178,6 @@ class _AddReviewPageState extends State<AddReviewPage> {
                       ),
                     ),
                     SizedBox(height: 24),
-
-                    // Ratings Panel
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFF9F9F9),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          ratingBox(
-                            'Foursquare',
-                            'Not rated yet',
-                            'assets/images/fsq.png',
-                          ),
-                          ratingBox(
-                            'Google',
-                            '4.4★',
-                            'assets/images/google.png',
-                          ),
-                          ratingBox('Facebook', '3.7★', 'assets/images/fb.png'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 24),
-
                     // New Add Review Input Container
                     Container(
                       padding: EdgeInsets.all(16),
@@ -146,17 +190,14 @@ class _AddReviewPageState extends State<AddReviewPage> {
                         children: [
                           Center(
                             child: Text(
-                              'Please share your opinion about Arco Diez Cafe',
+                              'Please share your opinion about ${widget.cafeTitle}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 20,
                               ),
-                              textAlign:
-                                  TextAlign
-                                      .center, // Optional, but good practice for multi-line
+                              textAlign: TextAlign.center,
                             ),
                           ),
-
                           SizedBox(height: 12),
                           Container(
                             height: 180,
@@ -175,6 +216,7 @@ class _AddReviewPageState extends State<AddReviewPage> {
                               decoration: InputDecoration.collapsed(
                                 hintText: 'Type something...',
                               ),
+                              onChanged: (_) => setState(() {}),
                             ),
                           ),
                           SizedBox(height: 16),
@@ -190,75 +232,48 @@ class _AddReviewPageState extends State<AddReviewPage> {
                               Text("Add your photo"),
                               Spacer(),
                               ElevatedButton(
-                                onPressed: () {
-                                  if (selectedRating == 0 ||
-                                      _commentController.text.trim().isEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Please provide a rating and a comment.',
-                                        ),
-                                      ),
-                                    );
-                                  } else {
-                                    showDialog(
-                                      context: context,
-                                      builder:
-                                          (context) => AlertDialog(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            title: Text('Thank You!'),
-                                            content: Text(
-                                              'Your review has been submitted successfully.',
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(
-                                                    context,
-                                                  ); // Close dialog
-                                                  Navigator.pop(
-                                                    context,
-                                                  ); // Navigate back
-
-                                                  // Clear form only after pop
-                                                  setState(() {
-                                                    selectedRating = 0;
-                                                    _commentController.clear();
-                                                    _selectedImage = null;
-                                                  });
-                                                },
-                                                child: Text('OK'),
-                                              ),
-                                            ],
-                                          ),
-                                    );
-
-                                    // Optionally clear form
-                                    setState(() {
-                                      selectedRating = 0;
-                                      _commentController.clear();
-                                      _selectedImage = null;
-                                    });
-                                  }
-                                },
+                                onPressed: isSubmitting
+                                    ? null
+                                    : (selectedRating > 0 &&
+                                            _commentController.text
+                                                .trim()
+                                                .isNotEmpty)
+                                        ? _submitReview
+                                        : null,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Color(0xFF0B55A0),
+                                  backgroundColor: (selectedRating > 0 &&
+                                          _commentController.text
+                                              .trim()
+                                              .isNotEmpty)
+                                      ? Color(0xFF0B55A0)
+                                      : Colors.white,
                                   shape: StadiumBorder(),
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 24,
                                     vertical: 12,
                                   ),
                                 ),
-                                child: Text(
-                                  'SEND REVIEW',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                                child: isSubmitting
+                                    ? SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          color: Color(0xFF0B55A0),
+                                          strokeWidth: 2.2,
+                                        ),
+                                      )
+                                    : Text(
+                                        'SEND REVIEW',
+                                        style: TextStyle(
+                                          color: (selectedRating > 0 &&
+                                                  _commentController.text
+                                                      .trim()
+                                                      .isNotEmpty)
+                                              ? Colors.white
+                                              : Color(0xFF0B55A0),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                               ),
                             ],
                           ),
@@ -278,15 +293,11 @@ class _AddReviewPageState extends State<AddReviewPage> {
                       ),
                     ),
                     SizedBox(height: 24),
-
-                    // Visitor's Reviews Header
-                    SizedBox(height: 12),
                   ],
                 ),
               ),
             ),
           ),
-
           // Back Button
           Positioned(
             top: 40,
@@ -301,67 +312,6 @@ class _AddReviewPageState extends State<AddReviewPage> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget ratingBox(String source, String rating, String iconPath) {
-    return Column(
-      children: [
-        Image.asset(iconPath, width: 32, height: 32),
-        SizedBox(height: 8),
-        Text(rating, style: TextStyle(fontWeight: FontWeight.bold)),
-        Text(source, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
-      ],
-    );
-  }
-
-  Widget reviewCard(Map<String, dynamic> review) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Color(0xFFF1F1F1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundImage: AssetImage(review['avatar']),
-                radius: 20,
-              ),
-              SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    review['name'],
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    review['time'],
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Row(
-            children: List.generate(5, (index) {
-              return Icon(
-                Icons.star,
-                size: 16,
-                color:
-                    index < review['rating'] ? Colors.orange : Colors.grey[300],
-              );
-            }),
-          ),
-          SizedBox(height: 8),
-          Text(review['comment'], style: TextStyle(fontSize: 14)),
         ],
       ),
     );
