@@ -90,9 +90,11 @@ class _BarsPageState extends State<BarsPage> {
 
   Future<void> _toggleFavorite(BarData bar, Set<String> favoriteBarTitles) async {
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please log in to manage favorites')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please log in to manage favorites')),
+        );
+      }
       return;
     }
     final favRef = FirebaseFirestore.instance
@@ -109,6 +111,7 @@ class _BarsPageState extends State<BarsPage> {
       await favRef.set({
         'imagePath': bar.imagePath,
         'subtitle': bar.subtitle,
+        'type': 'Bar',
         'addedAt': FieldValue.serverTimestamp(),
       });
     }
@@ -171,7 +174,7 @@ class _BarsPageState extends State<BarsPage> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withAlpha((0.08 * 255).round()),
+                            color: Colors.black.withValues(alpha: 0.08),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -333,7 +336,7 @@ class _BarsPageState extends State<BarsPage> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.green.withAlpha((0.13 * 255).round()),
+                                  color: Colors.green.withValues(alpha: 0.13),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
@@ -384,10 +387,10 @@ class _BarsPageState extends State<BarsPage> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withAlpha((0.1 * 255).round()),
+                                color: Colors.blue.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: Colors.blue.withAlpha((0.3 * 255).round()),
+                                  color: Colors.blue.withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -470,7 +473,6 @@ class _BarsPageState extends State<BarsPage> {
               ),
             ),
           ),
-          // Hardcoded Bottom Navigation Bar
           Container(
             margin: EdgeInsets.only(
               left: screenWidth * 0.05,
@@ -487,7 +489,7 @@ class _BarsPageState extends State<BarsPage> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                   spreadRadius: 2,
@@ -590,7 +592,7 @@ class _BarsPageState extends State<BarsPage> {
           vertical: screenWidth * 0.025,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withOpacity(0.15) : Colors.transparent,
+          color: isSelected ? Colors.blue.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(25),
         ),
         child: AnimatedSwitcher(
@@ -670,7 +672,7 @@ class BarCard extends StatelessWidget {
     showDialog(
       context: context,
       barrierColor: Colors.black38,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             final isEnabled = selectedRating != 0 && selectedRating != yourRating && !isSubmitting;
@@ -694,28 +696,29 @@ class BarCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 22),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(5, (i) {
-                        return IconButton(
-                          icon: Icon(
-                            i < selectedRating ? Icons.star : Icons.star_border,
-                            color: i < selectedRating ? const Color(0xFF0B55A0) : Colors.amber,
-                            size: 36,
-                          ),
-                          splashRadius: 24,
-                          onPressed: () => setDialogState(() {
-                            selectedRating = i + 1;
-                          }),
-                        );
-                      }),
+                    Center(
+                      child: Wrap(
+                        spacing: 4,
+                        children: List.generate(5, (i) {
+                          return GestureDetector(
+                            onTap: () => setDialogState(() {
+                              selectedRating = i + 1;
+                            }),
+                            child: Icon(
+                              i < selectedRating ? Icons.star : Icons.star_border,
+                              color: i < selectedRating ? const Color(0xFF0B55A0) : Colors.amber,
+                              size: 40,
+                            ),
+                          );
+                        }),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
                           child: TextButton(
-                            onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                            onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
                             child: const Text(
                               'Cancel',
                               style: TextStyle(
@@ -740,15 +743,19 @@ class BarCard extends StatelessWidget {
                                           .collection('ratings')
                                           .doc(user!.uid);
                                       await ratingRef.set({'rating': selectedRating});
-                                      Navigator.pop(context);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Thanks for rating $title!'),
-                                          backgroundColor: const Color(0xFF0B55A0),
-                                        ),
-                                      );
+                                      if (dialogContext.mounted) {
+                                        Navigator.pop(dialogContext);
+                                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Thanks for rating $title!'),
+                                            backgroundColor: const Color(0xFF0B55A0),
+                                          ),
+                                        );
+                                      }
                                     }
-                                    setDialogState(() => isSubmitting = false);
+                                    if (context.mounted) {
+                                      setDialogState(() => isSubmitting = false);
+                                    }
                                   }
                                 : null,
                             style: ElevatedButton.styleFrom(
@@ -796,13 +803,15 @@ class BarCard extends StatelessWidget {
                                         .collection('ratings')
                                         .doc(user!.uid);
                                     await ratingRef.delete();
-                                    Navigator.pop(context);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text('Your rating was removed!'),
-                                        backgroundColor: Colors.grey[600],
-                                      ),
-                                    );
+                                    if (dialogContext.mounted) {
+                                      Navigator.pop(dialogContext);
+                                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                        SnackBar(
+                                          content: const Text('Your rating was removed!'),
+                                          backgroundColor: Colors.grey[600],
+                                        ),
+                                      );
+                                    }
                                   }
                                 },
                           icon: const Icon(Icons.delete, color: Colors.redAccent),
@@ -831,10 +840,10 @@ class BarCard extends StatelessWidget {
       margin: const EdgeInsets.only(right: 15),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: isDark ? Colors.white.withOpacity(0.09) : Colors.grey[200],
+        color: isDark ? Colors.white.withValues(alpha: 0.09) : Colors.grey[200],
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -889,7 +898,7 @@ class BarCard extends StatelessWidget {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withOpacity(0.7),
+                        Colors.black.withValues(alpha: 0.7),
                       ],
                     ),
                   ),
@@ -915,11 +924,11 @@ class BarCard extends StatelessWidget {
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white : Colors.white.withOpacity(0.9),
+                      color: isDark ? Colors.white : Colors.white.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.13),
+                          color: Colors.black.withValues(alpha: 0.13),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -999,11 +1008,11 @@ class BarCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),

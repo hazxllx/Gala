@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Import your detail pages
 import 'package:my_project/screens/home/arcodiez/arco_diez.dart';
 import 'package:my_project/screens/home/harina/harina.dart';
-// Add more imports as needed
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -42,7 +40,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
   }
 
-  // Extract city name from subtitle
   String _extractCityName(String subtitle) {
     final cities = ['Naga City', 'Pili', 'Siruma', 'Caramoan', 'Pasacao', 'Tinambac'];
     
@@ -55,7 +52,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return 'Unknown City';
   }
 
-  // Group items by city
   Map<String, List<Map<String, dynamic>>> _groupByCity(List<Map<String, dynamic>> items) {
     final Map<String, List<Map<String, dynamic>>> grouped = {};
     
@@ -70,7 +66,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return grouped;
   }
 
-  // Navigate to detail page based on cafe name
   void _navigateToDetail(BuildContext context, String cafeTitle) {
     if (cafeTitle == 'Arco Diez Cafe') {
       Navigator.push(
@@ -83,11 +78,36 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         MaterialPageRoute(builder: (context) => const HarinaCafePage()),
       );
     } else {
-      // Show message for cafes without detail pages yet
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('No details page yet for $cafeTitle')),
       );
     }
+  }
+
+  Future<String> _getEstablishmentType(String establishmentName) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('cafes')
+          .doc(establishmentName)
+          .get();
+      
+      if (doc.exists) {
+        final type = doc.data()?['type'] as String?;
+        return type ?? 'Cafe';
+      }
+    } catch (e) {
+      debugPrint('Error fetching type: $e');
+    }
+    return 'Cafe';
+  }
+
+  String _normalizeType(String type) {
+    final normalized = type.toLowerCase().trim();
+    if (normalized == 'bar') return 'Bar';
+    if (normalized == 'cafe' || normalized == 'café') return 'Cafe';
+    if (normalized == 'restaurant') return 'Restaurant';
+    if (normalized.contains('fast') && normalized.contains('food')) return 'Fast Food';
+    return type;
   }
 
   @override
@@ -135,7 +155,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Category pills
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
@@ -154,7 +173,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               }),
             ),
           ),
-          // Favorites list grouped by city
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: favoritesRef.snapshots(),
@@ -171,86 +189,127 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   );
                 }
                 final docs = snapshot.data!.docs;
-                
-                // Filter by category (for now only Cafes work)
-                if (selectedCategoryIndex != 0) {
-                  return Center(
-                    child: Text(
-                      'No favorites yet',
-                      style: TextStyle(fontSize: 18, color: isDark ? Colors.white54 : Colors.grey),
-                    ),
-                  );
-                }
 
-                final items = docs.map((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  return {
-                    'id': doc.id,
-                    'imagePath': data['imagePath'] ?? '',
-                    'subtitle': data['subtitle'] ?? '',
-                  };
-                }).toList();
+                return FutureBuilder<List<Map<String, dynamic>>>(
+                  future: Future.wait(
+                    docs.map((doc) async {
+                      final data = doc.data() as Map<String, dynamic>;
+                      String type = data['type'] as String? ?? '';
+                      
+                      if (type.isEmpty) {
+                        type = await _getEstablishmentType(doc.id);
+                        await favoritesRef.doc(doc.id).update({'type': type});
+                      }
+                      
+                      return {
+                        'id': doc.id,
+                        'imagePath': data['imagePath'] ?? '',
+                        'subtitle': data['subtitle'] ?? '',
+                        'type': _normalizeType(type),
+                      };
+                    }).toList(),
+                  ),
+                  builder: (context, futureSnapshot) {
+                    if (futureSnapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                // Group items by city
-                final groupedByCity = _groupByCity(items);
+                    if (!futureSnapshot.hasData) {
+                      return Center(
+                        child: Text(
+                          'No favorites yet',
+                          style: TextStyle(fontSize: 18, color: isDark ? Colors.white54 : Colors.grey),
+                        ),
+                      );
+                    }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  itemCount: groupedByCity.length,
-                  itemBuilder: (context, index) {
-                    final cityName = groupedByCity.keys.elementAt(index);
-                    final cityItems = groupedByCity[cityName]!;
+                    final allItems = futureSnapshot.data!;
+                    final selectedCategory = categories[selectedCategoryIndex].label;
+                    
+                    final filteredItems = allItems.where((item) {
+                      final itemType = item['type'] as String;
+                      switch (selectedCategory) {
+                        case 'Cafes':
+                          return itemType == 'Cafe';
+                        case 'Fast Food Chains':
+                          return itemType == 'Fast Food';
+                        case 'Restaurants':
+                          return itemType == 'Restaurant';
+                        case 'Bars':
+                          return itemType == 'Bar';
+                        default:
+                          return true;
+                      }
+                    }).toList();
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // City header with "View all"
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          child: Row(
-                            children: [
-                              Text(
-                                cityName,
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark ? Colors.white : Colors.black87,
-                                ),
-                              ),
-                              const Spacer(),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => ViewAllScreen(
-                                        title: cityName,
-                                        items: cityItems,
-                                        onTap: (cafeTitle) => _navigateToDetail(context, cafeTitle),
+                    if (filteredItems.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'No favorites yet',
+                          style: TextStyle(fontSize: 18, color: isDark ? Colors.white54 : Colors.grey),
+                        ),
+                      );
+                    }
+
+                    final groupedByCity = _groupByCity(filteredItems);
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      itemCount: groupedByCity.length,
+                      itemBuilder: (context, index) {
+                        final cityName = groupedByCity.keys.elementAt(index);
+                        final cityItems = groupedByCity[cityName]!;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    cityName,
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => ViewAllScreen(
+                                            title: cityName,
+                                            items: cityItems,
+                                            onTap: (cafeTitle) => _navigateToDetail(context, cafeTitle),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: const Text(
+                                      'View all',
+                                      style: TextStyle(
+                                        color: Color(0xFF0C57E5),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 15,
                                       ),
                                     ),
-                                  );
-                                },
-                                child: const Text(
-                                  'View all',
-                                  style: TextStyle(
-                                    color: Color(0xFF0C57E5),
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 15,
                                   ),
-                                ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                        // Carousel for this city
-                        _CityCarousel(
-                          items: cityItems,
-                          onUnfavorite: (id) async => await favoritesRef.doc(id).delete(),
-                          onTap: (cafeTitle) => _navigateToDetail(context, cafeTitle),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                            ),
+                            _CityCarousel(
+                              items: cityItems,
+                              onUnfavorite: (id) async => await favoritesRef.doc(id).delete(),
+                              onTap: (cafeTitle) => _navigateToDetail(context, cafeTitle),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        );
+                      },
                     );
                   },
                 );
@@ -262,8 +321,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 }
-
-// ---- Category Pill ----
 
 class _CategoryPill extends StatelessWidget {
   final IconData icon;
@@ -320,8 +377,6 @@ class _CategoryPill extends StatelessWidget {
     );
   }
 }
-
-// ---- City Carousel ----
 
 class _CityCarousel extends StatefulWidget {
   final List<Map<String, dynamic>> items;
@@ -410,7 +465,6 @@ class _CityCarouselState extends State<_CityCarousel> {
   }
 }
 
-// -- Favorite Card with navigation
 class _CarouselFavoriteCard extends StatelessWidget {
   final String imagePath;
   final String cafeTitle;
@@ -426,7 +480,6 @@ class _CarouselFavoriteCard extends StatelessWidget {
     required this.onTap,
   });
 
-  // Get live rating stream from Firestore
   Stream<({double? average, int count})> getRatingInfo() {
     final ref = FirebaseFirestore.instance
         .collection('cafes')
@@ -456,7 +509,6 @@ class _CarouselFavoriteCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           child: Stack(
             children: [
-              // Image
               imagePath.isNotEmpty
                   ? (isNetworkImage
                       ? Image.network(
@@ -507,7 +559,6 @@ class _CarouselFavoriteCard extends StatelessWidget {
                   ),
                 ),
               ),
-              // Rating badge with number (top-left)
               Positioned(
                 left: 16,
                 top: 14,
@@ -544,7 +595,6 @@ class _CarouselFavoriteCard extends StatelessWidget {
                   },
                 ),
               ),
-              // Title and subtitle
               Positioned(
                 left: 18,
                 bottom: 32,
@@ -583,7 +633,6 @@ class _CarouselFavoriteCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Heart button
               Positioned(
                 right: 22,
                 bottom: 22,
@@ -600,7 +649,6 @@ class _CarouselFavoriteCard extends StatelessWidget {
   }
 }
 
-// ----- View All Screen -----
 class ViewAllScreen extends StatelessWidget {
   final String title;
   final List<Map<String, dynamic>> items;
@@ -752,7 +800,6 @@ class _ViewAllFavoriteCard extends StatelessWidget {
                 ),
               ),
             ),
-            // Rating badge
             Positioned(
               left: 18,
               bottom: 50,
@@ -789,7 +836,6 @@ class _ViewAllFavoriteCard extends StatelessWidget {
                 },
               ),
             ),
-            // Title and subtitle
             Positioned(
               left: 18,
               bottom: 18,

@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Dummy pages for navigation
 class FavoritesScreen extends StatelessWidget {
+  const FavoritesScreen({super.key});
+
   @override
   Widget build(BuildContext context) => Scaffold(
     body: Center(
       child: Text(
         'Favorites',
         style: TextStyle(
-          color: Theme.of(context).colorScheme.onBackground,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
     ),
@@ -22,7 +23,7 @@ class ProfilePage extends StatelessWidget {
   final String username;
   final VoidCallback onSettingsTap;
 
-  ProfilePage({required this.username, required this.onSettingsTap});
+  const ProfilePage({super.key, required this.username, required this.onSettingsTap});
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -39,7 +40,7 @@ class ProfilePage extends StatelessWidget {
         body: Center(
           child: ElevatedButton(
             onPressed: onSettingsTap,
-            child: Text('Settings'),
+            child: const Text('Settings'),
           ),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -47,7 +48,7 @@ class ProfilePage extends StatelessWidget {
 }
 
 class SettingsPage extends StatelessWidget {
-  const SettingsPage();
+  const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -71,7 +72,7 @@ class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key, this.username});
 
   @override
-  _NotificationsPageState createState() => _NotificationsPageState();
+  State<NotificationsPage> createState() => _NotificationsPageState();
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
@@ -114,7 +115,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          // Custom AppBar
           Container(
             padding: EdgeInsets.only(
               top: MediaQuery.of(context).padding.top + 10,
@@ -126,22 +126,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Back Arrow Icon
                 IconButton(
                   icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).iconTheme.color),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
-                // Title "Notifications"
-                    Text(
-            'Notifications',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-              color: Theme.of(context).colorScheme.onBackground,
-            ),
-          ),
-
-                // User Photo on the right - synced with real user data
+                Text(
+                  'Notifications',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
                 CircleAvatar(
                   backgroundImage: _userPhotoUrl != null && _userPhotoUrl!.isNotEmpty
                       ? NetworkImage(_userPhotoUrl!)
@@ -157,8 +153,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ],
             ),
           ),
-
-          // Main Body content
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(
@@ -169,25 +163,22 @@ class _NotificationsPageState extends State<NotificationsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Today heading
                   Text(
                     'Today',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onBackground,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // No notifications message centered
                   Expanded(
                     child: Center(
                       child: Text(
                         'No notifications yet',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ),

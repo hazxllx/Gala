@@ -6,8 +6,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 
 class FindYourPlacePage extends StatefulWidget {
+  const FindYourPlacePage({super.key});
+
   @override
-  _FindYourPlacePageState createState() => _FindYourPlacePageState();
+  State<FindYourPlacePage> createState() => _FindYourPlacePageState();
 }
 
 class _FindYourPlacePageState extends State<FindYourPlacePage> {
@@ -107,13 +109,13 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              center: LatLng(13.6218, 123.1947),
-              zoom: 10,
+              initialCenter: LatLng(13.6218, 123.1947),
+              initialZoom: 10,
             ),
             children: [
               TileLayer(
                 urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                subdomains: ['a', 'b', 'c'],
+                subdomains: const ['a', 'b', 'c'],
               ),
               if (_selectedPlace != null)
                 MarkerLayer(
@@ -130,8 +132,6 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
                 ),
             ],
           ),
-
-          // 🔍 Search input
           Positioned(
             top: 40,
             left: 20,
@@ -175,8 +175,6 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
               ],
             ),
           ),
-
-          // ✅ Bottom card — without lat/lon
           if (_selectedPlace != null)
             Positioned(
               bottom: 20,
@@ -199,12 +197,10 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    // ✅ Removed Lat/Lon Text()
                     Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton(
                         onPressed: _confirmLocation,
-                        child: const Text("Go"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
                           foregroundColor: Colors.white,
@@ -212,18 +208,17 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
+                        child: const Text("Go"),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-
-          // ✅ Confirm Dialog
           if (_showConfirmationDialog)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 child: Center(
                   child: Container(
                     width: 320,
@@ -247,11 +242,11 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
                           children: [
                             ElevatedButton(
                               onPressed: _finalizeLocation,
-                              child: const Text("Confirm"),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blue,
                                 foregroundColor: Colors.white,
                               ),
+                              child: const Text("Confirm"),
                             ),
                             ElevatedButton(
                               onPressed: () {
@@ -259,11 +254,11 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
                                   _showConfirmationDialog = false;
                                 });
                               },
-                              child: const Text("No, Change"),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.grey[300],
                                 foregroundColor: Colors.black,
                               ),
+                              child: const Text("No, Change"),
                             ),
                           ],
                         )

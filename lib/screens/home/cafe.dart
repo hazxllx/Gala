@@ -833,21 +833,22 @@ class CafeCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 22),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(5, (i) {
-                        return IconButton(
-                          icon: Icon(
-                            i < selectedRating ? Icons.star : Icons.star_border,
-                            color: i < selectedRating ? const Color(0xFF0B55A0) : Colors.amber,
-                            size: 36,
-                          ),
-                          splashRadius: 24,
-                          onPressed: () => setDialogState(() {
-                            selectedRating = i + 1;
-                          }),
-                        );
-                      }),
+                    Center(
+                      child: Wrap(
+                        spacing: 4,
+                        children: List.generate(5, (i) {
+                          return GestureDetector(
+                            onTap: () => setDialogState(() {
+                              selectedRating = i + 1;
+                            }),
+                            child: Icon(
+                              i < selectedRating ? Icons.star : Icons.star_border,
+                              color: i < selectedRating ? const Color(0xFF0B55A0) : Colors.amber,
+                              size: 40,
+                            ),
+                          );
+                        }),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     Row(
@@ -995,8 +996,8 @@ class CafeCard extends StatelessWidget {
                     return Center(
                       child: CircularProgressIndicator(
                         value: loadingProgress.expectedTotalBytes != null
-                         ? loadingProgress.cumulativeBytesLoaded /   
-                              loadingProgress.expectedTotalBytes!
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
                             : null,
                       ),
                     );

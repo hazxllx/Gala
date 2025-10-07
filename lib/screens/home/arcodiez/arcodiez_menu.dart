@@ -134,7 +134,7 @@ class _MenuPageState extends State<MenuPage> {
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: Colors.white, // White text
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -179,27 +179,27 @@ class _MenuPageState extends State<MenuPage> {
       // Hot Non Coffee
       return [
         buildMenuItem(
-          'assets/images/tea_bag.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/tea_bag.png',
           'Tea Bags - ₱60',
           'Ask for availability',
         ),
         buildMenuItem(
-          'assets/images/chocolate.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/chocolate.png',
           'Chocolate Tablea - ₱90',
           'Batangas cacao + milk',
         ),
         buildMenuItem(
-          'assets/images/lemon.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/lemon.png',
           'Lemonade - ₱100',
           'Kalamansi juice + hot water',
         ),
         buildMenuItem(
-          'assets/images/coffee.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/coffee.png',
           'Iced Chocolate Latte - ₱130',
           'Chocolate powder + steamed milk',
         ),
         buildMenuItem(
-          'assets/images/matcha.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/matcha.png',
           'Matcha Latte - ₱140',
           'Green tea matcha + steamed milk',
         ),
@@ -208,47 +208,47 @@ class _MenuPageState extends State<MenuPage> {
       // Cold Non Coffee
       return [
         buildMenuItem(
-          'assets/images/clatte.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/clatte.png',
           'Chocolate Latte - ₱150',
           'Chocolate Powder + Steamed Milk + Ice',
         ),
         buildMenuItem(
-          'assets/images/mlatte.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mlatte.png',
           'Matcha Latte - ₱160',
           'Green Tea Matcha + Steamed Milk + Ice',
         ),
         buildMenuItem(
-          'assets/images/mclatte.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mclatte.png',
           'Matcha Chocolate Latte - ₱160',
           'Green Tea Matcha + Chocolate Powder + Steamed Milk + Ice',
         ),
         buildMenuItem(
-          'assets/images/slatte.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mslatte.png',
           'Strawberry Latte - ₱180',
           'Strawberry Puree + Steamed Milk + Ice',
         ),
         buildMenuItem(
-          'assets/images/mglatte.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mglatte.png',
           'Mango Latte - ₱180',
           'Mango Puree + Steamed Milk + Ice',
         ),
         buildMenuItem(
-          'assets/images/mslatte.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mslatte.png',
           'Matcha Strawberry - ₱190',
           'Green Tea Matcha + Strawberry Puree + Steamed Milk + Ice',
         ),
         buildMenuItem(
-          'assets/images/mm.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mm.png',
           'Matcha Mango - ₱190',
           'Green Tea Matcha + Mango Puree + Steamed Milk + Ice',
         ),
         buildMenuItem(
-          'assets/images/blatte.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/blatte.png',
           'Banana Latte - ₱180',
           'Banana Puree + Steamed Milk + Ice',
         ),
         buildMenuItem(
-          'assets/images/mb.png',
+          'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mb.png',
           'Matcha Banana - ₱190',
           'Green Tea Matcha + Banana Puree + Steamed Milk + Ice',
         ),
@@ -291,7 +291,7 @@ class _MenuPageState extends State<MenuPage> {
       onTap: () {
         showDialog(
           context: context,
-          barrierColor: Colors.black.withOpacity(0.8), // dark background
+          barrierColor: Colors.black.withOpacity(0.8),
           builder: (BuildContext context) {
             return Dialog(
               elevation: 0,
@@ -307,7 +307,7 @@ class _MenuPageState extends State<MenuPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Close Button (Top Right, inside)
+                      // Close Button
                       Align(
                         alignment: Alignment.topRight,
                         child: IconButton(
@@ -320,16 +320,37 @@ class _MenuPageState extends State<MenuPage> {
                         ),
                       ),
 
-                      // Image with side padding
+                      // Network Image with padding
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.asset(
+                          child: Image.network(
                             imagePath,
                             height: 250,
                             width: double.infinity,
                             fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                height: 250,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                height: 250,
+                                color: Colors.grey[300],
+                                child: Icon(Icons.error, size: 50),
+                              );
+                            },
                           ),
                         ),
                       ),
@@ -380,11 +401,33 @@ class _MenuPageState extends State<MenuPage> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
-            child: Image.asset(
+            child: Image.network(
               imagePath,
               width: double.infinity,
               height: 120,
               fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  height: 120,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 120,
+                  color: Colors.grey[300],
+                  child: Icon(Icons.broken_image, size: 40),
+                );
+              },
             ),
           ),
           SizedBox(height: 8),
