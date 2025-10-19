@@ -1,12 +1,10 @@
-# 🎒 Gala: Travel Companion App for Naga City
-[![Version](https://img.shields.io/badge[![License](https://img.shields.io/badge/license
-
+# 🎒 Gala: Travel Companion App for Camarines Sur
 
 ## ✨ Overview
-**Gala** is your ultimate travel companion for exploring Naga City. Discover curated local attractions such as cafes and restaurants with ease! Get detailed directions including public transportation info, fare estimates, and ride options. Plan your meals ahead by browsing menus from participating dining spots. Gala simplifies travel planning so you can focus on enjoying your journey.
+**Gala** is your ultimate travel companion for exploring Camarines Sur. Discover curated local attractions such as cafes and restaurants with ease! Get detailed directions including public transportation info, fare estimates, and ride options. Plan your meals ahead by browsing menus from participating dining spots. Gala simplifies travel planning so you can focus on enjoying your journey.
 
 ## 🏞️ Project Context
-Navigating and exploring Naga City can be challenging without centralized, reliable info. Tourists and locals alike struggle to find directions, transit data, and dining options in one place. Gala fills this gap by consolidating everything into a single seamless platform, making your exploration smooth and efficient.
+Navigating and exploring Camarines Sur can be challenging without centralized, reliable info. Tourists and locals alike struggle to find directions, transit data, and dining options in one place. Gala fills this gap by consolidating everything into a single seamless platform, making your exploration smooth and efficient.
 
 ## 🎯 Objectives
 - Find and choose local cafes and restaurants based on preferences.
@@ -16,10 +14,10 @@ Navigating and exploring Naga City can be challenging without centralized, relia
 - Centralize essential tourist info for a better travel experience.
 
 ## 🗺️ Scope & Limitations
-- Focused on tourist-friendly spots in Naga City.
+- Focused on tourist-friendly spots in Camarines Sur.
 - Directions include public transport with fare cost estimation.
 - Menus from select cafes to aid dining choices.
-- Excludes areas outside Naga City (other provinces of Camarines Sur and beyond).
+- Excludes areas outside Camarines Sur (other provinces of Camarines Sur and beyond).
 - Fare estimates subject to change due to local transit rate fluctuations.
 
 ## 🔧 Functional Requirements
