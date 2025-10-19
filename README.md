@@ -45,6 +45,3 @@ git clone https://github.com/yourusername/gala.git
 cd gala
 # Follow setup instructions here
 ```
-***
-
-Feel free to customize badges or add screenshots/gifs to further enhance the readme visually on your GitHub repository. Let me know if you want help with that too!
