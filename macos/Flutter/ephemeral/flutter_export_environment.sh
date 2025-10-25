@@ -1,12 +1,11 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
-export "FLUTTER_ROOT=C:\Users\Hazel\dev\flutter"
-export "FLUTTER_APPLICATION_PATH=C:\Users\Hazel\Downloads\Gala_\Gala_\my_project"
+export "FLUTTER_ROOT=C:\Users\eric\flutter"
+export "FLUTTER_APPLICATION_PATH=C:\Users\eric\Desktop\Gala"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_BUILD_DIR=build"
 export "FLUTTER_BUILD_NAME=1.0.0"
 export "FLUTTER_BUILD_NUMBER=1"
-export "FLUTTER_CLI_BUILD_MODE=debug"
 export "DART_OBFUSCATION=false"
 export "TRACK_WIDGET_CREATION=true"
 export "TREE_SHAKE_ICONS=false"

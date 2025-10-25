@@ -1,7 +1,7 @@
 plugins {
     id("com.google.gms.google-services") version "4.3.15" apply false
-    id("com.android.application") version "8.7.0"
-    id("org.jetbrains.kotlin.android")
+    id("kotlin-android")
+    id("com.android.application")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -9,9 +9,8 @@ android {
     namespace = "com.example.my_project"
 
     // Set compileSdk and minSdk versions explicitly
-    compileSdk = 36
-
-    ndkVersion = "27.0.12077973"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -24,10 +23,10 @@ android {
 
     defaultConfig {
         applicationId = "com.example.my_project"
-        minSdk = 24
-        targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
     }
 
     buildTypes {
