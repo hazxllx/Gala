@@ -13,3 +13,5 @@ build/
 
 # Other
 pubspec.lock
+
+/android/local.properties
