@@ -145,7 +145,7 @@ class _FindYourPlacePageState extends State<FindYourPlacePage> {
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.white,
-                    hintText: 'Search location...',
+                    hintText: 'Search location...test',
                     hintStyle: const TextStyle(color: Colors.black54),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
