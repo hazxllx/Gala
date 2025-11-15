@@ -2,26 +2,43 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:my_project/screens/home/homepage.dart';
-import 'package:my_project/screens/auth/signup_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// Do NOT import AdminPanelPage; we navigate by named route.
+// import 'package:my_project/screens/admin/admin_panel.dart';
+// HomePage is also navigated to by route; import not required here.
+// import 'package:my_project/screens/home/homepage.dart';
+import 'package:my_project/screens/auth/signup_page.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
+
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
+
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+
   bool _obscurePassword = true;
   bool _isLoading = false;
 
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(); // <-- CORRECT for v7.2.0
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +46,7 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
+          // Header image + copy
           Stack(
             children: [
               Opacity(
@@ -50,8 +68,7 @@ class _LoginPageState extends State<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back,
-                          color: Colors.white, size: 28),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                     const SizedBox(height: 10),
@@ -96,6 +113,9 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
           ),
+
+
+          // Form
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -124,15 +144,13 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 36),
                     TextField(
                       controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         labelText: "Email address",
                         labelStyle: const TextStyle(fontSize: 15),
                         prefixIcon: const Icon(Icons.email_outlined),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16, horizontal: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -145,20 +163,11 @@ class _LoginPageState extends State<LoginPage> {
                         labelStyle: const TextStyle(fontSize: 15),
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(_obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
+                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16, horizontal: 10),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                     const SizedBox(height: 5),
@@ -166,8 +175,7 @@ class _LoginPageState extends State<LoginPage> {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () {},
-                        child: const Text("Forget password?",
-                            style: TextStyle(color: Colors.blue)),
+                        child: const Text("Forget password?", style: TextStyle(color: Colors.blue)),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -176,24 +184,15 @@ class _LoginPageState extends State<LoginPage> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _loginUser,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color.fromARGB(255, 0, 71, 165),
+                          backgroundColor: const Color.fromARGB(255, 0, 71, 165),
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: _isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
+                            ? const CircularProgressIndicator(color: Colors.white)
                             : const Text(
                                 "LOGIN",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                               ),
                       ),
                     ),
@@ -203,13 +202,7 @@ class _LoginPageState extends State<LoginPage> {
                         Expanded(child: Divider()),
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Text(
-                            "or sign in with",
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 12,
-                            ),
-                          ),
+                          child: Text("or sign in with", style: TextStyle(color: Colors.black54, fontSize: 12)),
                         ),
                         Expanded(child: Divider()),
                       ],
@@ -219,8 +212,7 @@ class _LoginPageState extends State<LoginPage> {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: _googleSignInUser,
-                        icon:
-                            Image.asset('assets/google_icon.png', height: 24),
+                        icon: Image.asset('assets/google_icon.png', height: 24),
                         label: const Text(
                           "Google",
                           style: TextStyle(
@@ -232,9 +224,7 @@ class _LoginPageState extends State<LoginPage> {
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Colors.red),
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
@@ -244,14 +234,10 @@ class _LoginPageState extends State<LoginPage> {
                       children: [
                         const Text("Don't have an account yet? "),
                         GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => SignUpPage(),
-                              ),
-                            );
-                          },
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const SignUpPage()),
+                          ),
                           child: const Text(
                             "Sign Up",
                             style: TextStyle(
@@ -272,36 +258,54 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Email login
+
+  // Email login with Admin/User routing via NAMED routes
   Future<void> _loginUser() async {
     setState(() => _isLoading = true);
     try {
       final email = emailController.text.trim();
       final password = passwordController.text.trim();
 
+
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+
       final uid = userCredential.user!.uid;
-      final userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final data = userDoc.data() ?? {};
 
-      final data = userDoc.data();
-      final firstName = data?['firstName'] ?? 'Explorer';
 
-      // SAVE LOGIN STATE AFTER SUCCESSFUL LOGIN
+      final firstName = (data['firstName'] ?? data['username'] ?? data['name'] ?? 'Explorer').toString();
+      final role = (data['role'] ?? 'user').toString().toLowerCase();
+
+
+      // Save login state
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
       await prefs.setString('username', firstName);
+      await prefs.setString('userEmail', email); // ← ADDED THIS LINE
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomePage(username: firstName),
-        ),
-      );
+
+      // Admin detection: Firestore role + your hardcoded fallback
+      final isHardcodedAdmin = (email == 'gala.admin@gmail.com' && password == '@dmIn 213%');
+      final isAdmin = isHardcodedAdmin || role == 'admin';
+
+
+      if (!mounted) return;
+
+
+      if (isAdmin) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/admin_panel', (route) => false);
+      } else {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/homepage',
+          (route) => false,
+          arguments: {'username': firstName},
+        );
+      }
     } on FirebaseAuthException catch (e) {
       String message;
       switch (e.code) {
@@ -314,61 +318,69 @@ class _LoginPageState extends State<LoginPage> {
         default:
           message = 'Login failed. Please try again.';
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unexpected error: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unexpected error: $e')),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // Google sign-in
+
+  // Google sign-in (routes to user homepage)
   Future<void> _googleSignInUser() async {
     setState(() => _isLoading = true);
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         setState(() => _isLoading = false);
-        return; // User canceled sign in
+        return; // cancelled
       }
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
 
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential userCredential =
-          await _auth.signInWithCredential(credential);
 
+      final UserCredential userCredential = await _auth.signInWithCredential(credential);
       final uid = userCredential.user!.uid;
-      final userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
-      final data = userDoc.data();
-      final firstName = data?['firstName'] ?? 'Explorer';
 
-      // SAVE LOGIN STATE AFTER SUCCESSFUL LOGIN
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final data = userDoc.data() ?? {};
+      final firstName = (data['firstName'] ?? data['username'] ?? data['name'] ?? 'Explorer').toString();
+
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
       await prefs.setString('username', firstName);
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomePage(username: firstName),
-        ),
+
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/homepage',
+        (route) => false,
+        arguments: {'username': firstName},
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Google Sign-In failed: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google Sign-In failed: $e')),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }

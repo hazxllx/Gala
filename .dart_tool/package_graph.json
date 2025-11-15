@@ -19,6 +19,7 @@
         "google_sign_in",
         "image_picker",
         "latlong2",
+        "path",
         "provider",
         "shared_preferences"
       ],
@@ -65,6 +66,11 @@
         "test_api",
         "vector_math"
       ]
+    },
+    {
+      "name": "path",
+      "version": "1.9.1",
+      "dependencies": []
     },
     {
       "name": "cached_network_image",
@@ -235,11 +241,6 @@
         "source_span",
         "string_scanner"
       ]
-    },
-    {
-      "name": "path",
-      "version": "1.9.1",
-      "dependencies": []
     },
     {
       "name": "json_annotation",

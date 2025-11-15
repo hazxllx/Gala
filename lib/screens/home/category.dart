@@ -8,7 +8,7 @@ import 'package:my_project/screens/home/header.dart';
 class CategoryScreen extends StatefulWidget {
   final String locationName;
   const CategoryScreen({super.key, required this.locationName});
-  
+
   @override
   State<CategoryScreen> createState() => _CategoryScreenState();
 }
@@ -30,7 +30,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
         "image": 'assets/cafe.png',
         "name": "Cafes",
         "onTap": (BuildContext context, String locationName) {
-          // Check if location is Pili
           if (locationName.toLowerCase().contains('pili')) {
             Navigator.push(
               context,
@@ -39,7 +38,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ),
             );
           } else {
-            // For other locations (like Naga), use the original CafePage
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -49,13 +47,50 @@ class _CategoryScreenState extends State<CategoryScreen> {
           }
         },
       },
-      {"image": 'assets/ffchains.png', "name": "Fast Food Chains"},
-      {"image": 'assets/restaurant.png', "name": "Restaurants"},
+
+      // ✅ NEW: Beach
+      {
+        "image": 'assets/beach.png',
+        "name": "Resorts",
+        "onTap": (BuildContext context, String locationName) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Beaches for $locationName coming soon 🌊'),
+              backgroundColor: Colors.blueAccent,
+            ),
+          );
+        },
+      },
+
+      // ✅ NEW: Parks
+      {
+        "image": 'assets/parks.png',
+        "name": "Parks",
+        "onTap": (BuildContext context, String locationName) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Parks for $locationName coming soon 🌳'),
+              backgroundColor: Colors.green.shade700,
+            ),
+          );
+        },
+      },
+
+      {
+        "image": 'assets/restaurant.png',
+        "name": "Restaurants",
+        "onTap": (BuildContext context, String locationName) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Restaurants for $locationName coming soon 🍽️'),
+            ),
+          );
+        },
+      },
       {
         "image": 'assets/inuman.png',
         "name": "Bars",
         "onTap": (BuildContext context, String locationName) {
-          // Navigate to bars page (currently only Naga has bars)
           if (locationName.toLowerCase().contains('naga')) {
             Navigator.push(
               context,
@@ -64,7 +99,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ),
             );
           } else {
-            // Show message if no bars available for other locations
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Bars not available for $locationName yet'),
@@ -75,7 +109,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
         },
       },
     ]);
-    filteredCategories = allCategories;
+
+    filteredCategories = List.from(allCategories);
 
     _searchController.addListener(() {
       final query = _searchController.text.toLowerCase();
@@ -90,10 +125,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
   void _sortCategories(String sortType) {
     setState(() {
       if (sortType == 'A-Z') {
-        filteredCategories.sort((a, b) => 
+        filteredCategories.sort((a, b) =>
             a['name'].toString().toLowerCase().compareTo(b['name'].toString().toLowerCase()));
       } else if (sortType == 'Z-A') {
-        filteredCategories.sort((a, b) => 
+        filteredCategories.sort((a, b) =>
             b['name'].toString().toLowerCase().compareTo(a['name'].toString().toLowerCase()));
       }
     });
@@ -116,6 +151,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
         child: ListView(
           children: [
             const SizedBox(height: 20),
+            // search
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
@@ -135,25 +171,15 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.search,
-                    color: Colors.grey[500],
-                    size: 22,
-                  ),
+                  Icon(Icons.search, color: Colors.grey[500], size: 22),
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextField(
                       controller: _searchController,
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 16,
-                      ),
+                      style: TextStyle(color: textColor, fontSize: 16),
                       decoration: InputDecoration(
                         hintText: "Search categories...",
-                        hintStyle: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 16,
-                        ),
+                        hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(vertical: 16),
                       ),
@@ -161,26 +187,21 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   ),
                   if (_searchController.text.isNotEmpty)
                     GestureDetector(
-                      onTap: () {
-                        _searchController.clear();
-                      },
+                      onTap: () => _searchController.clear(),
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           color: Colors.grey[300],
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
-                          Icons.close,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
+                        child: Icon(Icons.close, size: 16, color: Colors.grey[600]),
                       ),
                     ),
                 ],
               ),
             ),
             const SizedBox(height: 32),
+
             Text(
               "Where do you want to go?",
               style: TextStyle(
@@ -191,6 +212,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -208,8 +230,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  itemBuilder: (BuildContext context) => [
-                    const PopupMenuItem<String>(
+                  itemBuilder: (BuildContext context) => const [
+                    PopupMenuItem<String>(
                       value: 'A-Z',
                       child: Row(
                         children: [
@@ -219,7 +241,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         ],
                       ),
                     ),
-                    const PopupMenuItem<String>(
+                    PopupMenuItem<String>(
                       value: 'Z-A',
                       child: Row(
                         children: [
@@ -235,10 +257,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     decoration: BoxDecoration(
                       color: Colors.blue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.blue.withOpacity(0.3),
-                        width: 1,
-                      ),
+                      border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
@@ -260,36 +279,47 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ],
             ),
             const SizedBox(height: 16),
+
+            // categories row
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: filteredCategories.map((category) {
+                  final String name = category['name'] as String;
+
+                  // Accent text color per category
+                  final Color accent = name == 'Cafes'
+                      ? (isDarkMode
+                          ? const Color.fromARGB(255, 244, 194, 171)
+                          : const Color.fromARGB(255, 184, 101, 71))
+                      : name == 'Bars'
+                          ? (isDarkMode
+                              ? const Color.fromARGB(255, 149, 239, 167)
+                              : const Color.fromARGB(255, 31, 166, 35))
+                          : name == 'Beach'
+                              ? (isDarkMode
+                                  ? const Color.fromARGB(255, 162, 208, 255)
+                                  : const Color(0xFF1A73E8))
+                              : name == 'Parks'
+                                  ? (isDarkMode
+                                      ? const Color.fromARGB(255, 176, 231, 185)
+                                      : const Color(0xFF2E7D32))
+                                  : (isDarkMode
+                                      ? const Color.fromARGB(255, 174, 151, 255)
+                                      : const Color.fromARGB(255, 44, 13, 98));
+
                   return Row(
                     children: [
                       CategoryCard(
-                        image: category['image'],
-                        name: category['name'],
+                        image: category['image'] as String,
+                        name: name,
                         onTap: () {
                           if (category.containsKey('onTap')) {
                             category['onTap'](context, widget.locationName);
                           }
                         },
                         isDarkMode: isDarkMode,
-                        textColor: category['name'] == 'Cafes'
-                            ? (isDarkMode
-                                ? const Color.fromARGB(255, 244, 194, 171)
-                                : const Color.fromARGB(255, 184, 101, 71))
-                            : category['name'] == 'Bars'
-                                ? (isDarkMode
-                                    ? const Color.fromARGB(255, 149, 239, 167)
-                                    : const Color.fromARGB(255, 31, 166, 35))
-                                : category['name'] == 'Fast Food Chains'
-                                    ? (isDarkMode
-                                        ? const Color.fromARGB(255, 255, 125, 118)
-                                        : const Color.fromARGB(255, 211, 41, 28))
-                                    : (isDarkMode
-                                        ? const Color.fromARGB(255, 174, 151, 255)
-                                        : const Color.fromARGB(255, 44, 13, 98)),
+                        textColor: accent,
                       ),
                       const SizedBox(width: 12),
                     ],
@@ -297,6 +327,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 }).toList(),
               ),
             ),
+
             const SizedBox(height: 32),
             Text(
               "What do you want to do?",
@@ -307,23 +338,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            ActionButton(
-              icon: 'assets/nearby.png',
-              label: "Find nearby places",
-              isDarkMode: isDarkMode,
-            ),
+            const SizedBox(height: 8),
+            ActionButton(icon: 'assets/nearby.png', label: "Find nearby places", isDarkMode: isDarkMode),
             const SizedBox(height: 12),
-            ActionButton(
-              icon: 'assets/directions.png',
-              label: "Get directions",
-              isDarkMode: isDarkMode,
-            ),
+            ActionButton(icon: 'assets/directions.png', label: "Get directions", isDarkMode: isDarkMode),
             const SizedBox(height: 12),
-            ActionButton(
-              icon: 'assets/fare.png',
-              label: "Check public transport & fare",
-              isDarkMode: isDarkMode,
-            ),
+            ActionButton(icon: 'assets/fare.png', label: "Check public transport & fare", isDarkMode: isDarkMode),
             const SizedBox(height: 40),
           ],
         ),
@@ -340,7 +360,7 @@ class CategoryCard extends StatelessWidget {
   final double width;
   final double height;
   final Color textColor;
-  
+
   const CategoryCard({
     super.key,
     required this.image,
@@ -413,7 +433,7 @@ class ActionButton extends StatelessWidget {
   final String icon;
   final String label;
   final bool isDarkMode;
-  
+
   const ActionButton({
     super.key,
     required this.icon,
@@ -449,11 +469,7 @@ class ActionButton extends StatelessWidget {
               color: const Color(0xFF2D9CDB).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Image.asset(
-              icon,
-              height: 40,
-              width: 40,
-            ),
+            child: Image.asset(icon, height: 40, width: 40),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -467,11 +483,7 @@ class ActionButton extends StatelessWidget {
               ),
             ),
           ),
-          Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: Colors.grey[500],
-          ),
+          Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[500]),
         ],
       ),
     );

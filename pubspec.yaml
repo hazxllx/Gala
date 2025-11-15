@@ -23,6 +23,7 @@ dependencies:
   cloud_firestore: ^4.14.0
   firebase_storage: ^11.6.6
   cached_network_image: ^3.3.1
+  path: ^1.9.1
 
 
 dev_dependencies:
@@ -62,7 +63,8 @@ flutter:
     - assets/tinambac.jpg
     - assets/bg_settings.png
     - assets/fare.png
-    - assets/ffchains.png
+    - assets/parks.png
+    - assets/beach.png
     - assets/nearby.png
     - assets/inuman.png
     - assets/cafe.png
