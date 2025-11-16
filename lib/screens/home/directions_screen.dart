@@ -40,9 +40,8 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   String _startName = ''; // Holds the display name for the start coordinates
   bool _isStartFieldFocused = false;
   Location? _startLocation; // Holds the Location object for the start
-  TextEditingController _destinationController = TextEditingController();
-  TextEditingController _startController =
-      TextEditingController(); // Controller for manual start input
+  late final TextEditingController _destinationController;
+  late final TextEditingController _startController;
 
   LatLng? _currentLocation;
   LatLng? _destinationLocation;
@@ -116,61 +115,68 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   }
 
   void _swapLocations() {
-  setState(() {
-    // Swap names/controllers
-    String? tempName = _startName;
-    _startName = _destinationName ?? _startController.text;
-    _destinationName = tempName;
+    setState(() {
+      // Swap names/controllers
+      String? tempName = _startName;
+      _startName = _destinationName ?? _startController.text;
+      _destinationName = tempName;
 
-    // Convert start location to LatLng if needed
-    LatLng? startLatLng = _startLocation != null 
-        ? LatLng(_startLocation!.latitude, _startLocation!.longitude)
-        : null;
-        
-    // Store the destination temporarily
-    LatLng? tempDestination = _destinationLocation;
-    
-    // Update destination with start location
-    _destinationLocation = startLatLng;
-    
-    // Update start location from the temp destination
-    if (tempDestination != null) {
-      _startLocation = Location(
-        latitude: tempDestination.latitude,
-        longitude: tempDestination.longitude,
-        timestamp: DateTime.now()
-      );
-    } else {
-      _startLocation = null;
-    }
+      // Convert start location to LatLng if needed
+      LatLng? startLatLng =
+          _startLocation != null
+              ? LatLng(_startLocation!.latitude, _startLocation!.longitude)
+              : null;
 
-    // Swap text in controllers
-    String tempText = _startController.text;
-    _startController.text = _destinationController.text;
-    _destinationController.text = tempText;
-    _searchController.text = _destinationController.text; // Keep search/destination synchronized
-    
-    // Re-calculate the route with the new start/destination
-    if (_startLocation != null && _destinationLocation != null) {
-      // Convert start location to LatLng for route calculation
-      LatLng startLatLng = LatLng(_startLocation!.latitude, _startLocation!.longitude);
-      _calculateRoute(startLatLng, _destinationLocation!);
-    } else {
-      _clearRoute();
-    }
-  });
-}
+      // Store the destination temporarily
+      LatLng? tempDestination = _destinationLocation;
+
+      // Update destination with start location
+      _destinationLocation = startLatLng;
+
+      // Update start location from the temp destination
+      if (tempDestination != null) {
+        _startLocation = Location(
+          latitude: tempDestination.latitude,
+          longitude: tempDestination.longitude,
+          timestamp: DateTime.now(),
+        );
+      } else {
+        _startLocation = null;
+      }
+
+      // Swap text in controllers
+      String tempText = _startController.text;
+      _startController.text = _destinationController.text;
+      _destinationController.text = tempText;
+      _searchController.text =
+          _destinationController.text; // Keep search/destination synchronized
+
+      // Re-calculate the route with the new start/destination
+      if (_startLocation != null && _destinationLocation != null) {
+        // Convert start location to LatLng for route calculation
+        LatLng startLatLng = LatLng(
+          _startLocation!.latitude,
+          _startLocation!.longitude,
+        );
+        _calculateRoute(startLatLng, _destinationLocation!);
+      } else {
+        _clearRoute();
+      }
+    });
+  }
 
   // Handle text changes for both inputs
   void _handleDestinationTextChange() {
-    if (!_isStartFieldFocused && _searchController.text != _destinationController.text) {
+    if (!_isStartFieldFocused &&
+        _searchController.text != _destinationController.text) {
       _searchController.text = _destinationController.text;
       _getSearchSuggestions(_destinationController.text);
     }
   }
 
   void _handleStartTextChange() {
-    if (_isStartFieldFocused && _searchController.text != _startController.text) {
+    if (_isStartFieldFocused &&
+        _searchController.text != _startController.text) {
       _searchController.text = _startController.text;
       _getSearchSuggestions(_startController.text);
     }
@@ -180,7 +186,10 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   void dispose() {
     _debounceTimer?.cancel();
     _searchController.dispose();
+    _destinationController.dispose(); // <-- ADD THIS
+    _startController.dispose(); // <-- ADD THIS
     _searchFocusNode.dispose();
+    _startSearchFocusNode.dispose(); // <-- ADD THIS
     _removeOverlay();
     super.dispose();
   }
@@ -242,7 +251,8 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
         _currentLocation = LatLng(position.latitude, position.longitude);
         _isLoading = false;
         // Update start name with coordinates
-        _startName = '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+        _startName =
+            '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
         _startController.text = _startName;
       });
 
@@ -1119,7 +1129,10 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
             child: CompositedTransformFollower(
               link: _layerLink,
               showWhenUnlinked: false,
-              offset: const Offset(0, 120), // Increased offset to avoid overlap with search bar
+              offset: const Offset(
+                0,
+                120,
+              ), // Increased offset to avoid overlap with search bar
               child: GestureDetector(
                 onTap: () {}, // Prevent tap from bubbling up
                 child: Material(
@@ -1452,6 +1465,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
                           // Start Address Input (Default: Current Location)
                           TextField(
                             controller: _startController,
+                            focusNode: _searchFocusNode,
                             style: TextStyle(color: textColor),
                             decoration: InputDecoration(
                               hintText: 'Start location (Current Location)',
@@ -1467,7 +1481,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
                               // For now, it allows manual text input
                               _removeOverlay();
                             },
-                            
+
                             onSubmitted: (value) {
                               // You'll need a new function like _searchStart(value)
                               // For simplicity, we just update the display name here
