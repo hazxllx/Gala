@@ -561,9 +561,9 @@
     },
     {
       "name": "petitparser",
-      "rootUri": "file:///C:/Users/Hazel/AppData/Local/Pub/Cache/hosted/pub.dev/petitparser-7.0.1",
+      "rootUri": "file:///C:/Users/Hazel/AppData/Local/Pub/Cache/hosted/pub.dev/petitparser-6.1.0",
       "packageUri": "lib/",
-      "languageVersion": "3.8"
+      "languageVersion": "3.5"
     },
     {
       "name": "platform",
@@ -783,9 +783,9 @@
     },
     {
       "name": "xml",
-      "rootUri": "file:///C:/Users/Hazel/AppData/Local/Pub/Cache/hosted/pub.dev/xml-6.6.1",
+      "rootUri": "file:///C:/Users/Hazel/AppData/Local/Pub/Cache/hosted/pub.dev/xml-6.5.0",
       "packageUri": "lib/",
-      "languageVersion": "3.8"
+      "languageVersion": "3.2"
     },
     {
       "name": "yaml",

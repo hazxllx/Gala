@@ -828,7 +828,7 @@
     },
     {
       "name": "xml",
-      "version": "6.6.1",
+      "version": "6.5.0",
       "dependencies": [
         "collection",
         "meta",
@@ -1073,7 +1073,7 @@
     },
     {
       "name": "petitparser",
-      "version": "7.0.1",
+      "version": "6.1.0",
       "dependencies": [
         "collection",
         "meta"
