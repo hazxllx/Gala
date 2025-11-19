@@ -2,19 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class EcoparkPage extends StatefulWidget {
   const EcoparkPage({super.key});
-
 
   @override
   State<EcoparkPage> createState() => _EcoparkPageState();
 }
 
-
 class _EcoparkPageState extends State<EcoparkPage> {
   bool isFavorited = false;
+  int _currentImageIndex = 0;
 
+  final List<String> galleryImages = [
+    'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_park/ecopark/ecopark.jpg',
+    'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_park/ecopark/ecopark1.jpg',
+  ];
 
   @override
   void initState() {
@@ -22,29 +24,37 @@ class _EcoparkPageState extends State<EcoparkPage> {
     _checkIfFavorited();
   }
 
-
   void _checkIfFavorited() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('favorites')
-          .doc('Naga Ecology Park')
-          .get();
-      if (mounted) {
-        setState(() {
-          isFavorited = doc.exists;
-        });
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('favorites')
+            .doc('Naga Ecology Park')
+            .get();
+        if (mounted) {
+          setState(() {
+            isFavorited = doc.exists;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Unable to connect to server. Please check your internet and try again.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
       }
     }
   }
 
-
   Future<void> _handleFavoriteToggle() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-
 
     final favoritesDoc = FirebaseFirestore.instance
         .collection('users')
@@ -52,24 +62,31 @@ class _EcoparkPageState extends State<EcoparkPage> {
         .collection('favorites')
         .doc('Naga Ecology Park');
 
-
-    if (!isFavorited) {
-      await favoritesDoc.set({
-        'imagePath': 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_park/ecopark/ecopark.jpg',
-        'subtitle': 'Zone 6, San Felipe, Naga City',
-        'type': 'Park',
-        'addedAt': FieldValue.serverTimestamp(),
+    try {
+      if (!isFavorited) {
+        await favoritesDoc.set({
+          'imagePath': galleryImages[0],
+          'subtitle': 'Zone 6, San Felipe, Naga City',
+          'type': 'Park',
+          'addedAt': FieldValue.serverTimestamp(),
+        });
+      } else {
+        await favoritesDoc.delete();
+      }
+      setState(() {
+        isFavorited = !isFavorited;
       });
-    } else {
-      await favoritesDoc.delete();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unable to connect to server. Please check your internet and try again.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
-
-
-    setState(() {
-      isFavorited = !isFavorited;
-    });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -77,22 +94,60 @@ class _EcoparkPageState extends State<EcoparkPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
+          // Image Carousel
           Positioned(
             top: -70,
             left: 0,
             right: 0,
-            child: Container(
+            child: SizedBox(
               height: 500,
               width: double.infinity,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: const NetworkImage('https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_park/ecopark/ecopark.jpg'),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Colors.black.withOpacity(0.22),
-                    BlendMode.darken,
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    onPageChanged: (index) {
+                      setState(() => _currentImageIndex = index);
+                    },
+                    itemCount: galleryImages.length,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: NetworkImage(galleryImages[index]),
+                            fit: BoxFit.cover,
+                            colorFilter: ColorFilter.mode(
+                              Colors.black.withOpacity(0.22),
+                              BlendMode.darken,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
+                  // Dot indicators
+                  Positioned(
+                    bottom: 18,
+                    left: 0,
+                    right: 0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        galleryImages.length,
+                        (index) => Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 6),
+                          width: _currentImageIndex == index ? 28 : 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: _currentImageIndex == index
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -262,7 +317,6 @@ class _EcoparkPageState extends State<EcoparkPage> {
     );
   }
 
-
   Widget _buildOperatingHours() {
     return Container(
       decoration: BoxDecoration(
@@ -333,7 +387,6 @@ class _EcoparkPageState extends State<EcoparkPage> {
     );
   }
 
-
   Widget _buildEntranceFee() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -389,7 +442,6 @@ class _EcoparkPageState extends State<EcoparkPage> {
     );
   }
 
-
   Widget _buildOptionTileWithArrow(
     BuildContext context,
     String imagePath,
@@ -442,11 +494,9 @@ class _EcoparkPageState extends State<EcoparkPage> {
     );
   }
 
-
   void _showRatingDialog(BuildContext context) {
     int selected = 0;
     bool isSubmitting = false;
-
 
     showDialog(
       context: context,
@@ -517,19 +567,30 @@ class _EcoparkPageState extends State<EcoparkPage> {
                               ? () async {
                                   setState(() => isSubmitting = true);
                                   final user = FirebaseAuth.instance.currentUser;
-                                  if (user != null) {
-                                    final ratingRef = FirebaseFirestore.instance
-                                        .collection('parks')
-                                        .doc('Naga Ecology Park')
-                                        .collection('ratings')
-                                        .doc(user.uid);
-                                    await ratingRef.set({'rating': selected});
+                                  try {
+                                    if (user != null) {
+                                      final ratingRef = FirebaseFirestore.instance
+                                          .collection('parks')
+                                          .doc('Naga Ecology Park')
+                                          .collection('ratings')
+                                          .doc(user.uid);
+                                      await ratingRef.set({'rating': selected});
+                                      if (dialogContext.mounted) {
+                                        Navigator.pop(dialogContext);
+                                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Thanks for rating Naga Ecology Park!'),
+                                            backgroundColor: Color(0xFF0B55A0),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  } catch (e) {
                                     if (dialogContext.mounted) {
-                                      Navigator.pop(dialogContext);
                                       ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Thanks for rating Naga Ecology Park!'),
-                                          backgroundColor: Color(0xFF0B55A0),
+                                        SnackBar(
+                                          content: Text('Unable to connect to server. Please try again later.'),
+                                          backgroundColor: Colors.redAccent,
                                         ),
                                       );
                                     }

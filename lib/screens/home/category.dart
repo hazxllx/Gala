@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_project/screens/home/cafe.dart' as naga;
 import 'package:my_project/screens/home/pili_cafe/pili_cafe.dart' as pili;
 import 'package:my_project/screens/home/naga_bars.dart' as bars;
+import 'package:my_project/screens/home/pili_resorts.dart';
+import 'package:my_project/screens/home/naga_parks.dart'; // <-- Use ParksPage here!
 import 'package:my_project/screens/home/header.dart';
 
 class CategoryScreen extends StatefulWidget {
@@ -48,31 +50,47 @@ class _CategoryScreenState extends State<CategoryScreen> {
         },
       },
 
-      // ✅ NEW: Beach
       {
         "image": 'assets/beach.png',
         "name": "Resorts",
         "onTap": (BuildContext context, String locationName) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Beaches for $locationName coming soon 🌊'),
-              backgroundColor: Colors.blueAccent,
-            ),
-          );
+          if (locationName.toLowerCase().contains('pili')) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ResortsPage(locationName: locationName),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Resorts for $locationName coming soon 🏖️'),
+                backgroundColor: Colors.blueAccent,
+              ),
+            );
+          }
         },
       },
 
-      // ✅ NEW: Parks
       {
         "image": 'assets/parks.png',
         "name": "Parks",
         "onTap": (BuildContext context, String locationName) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Parks for $locationName coming soon 🌳'),
-              backgroundColor: Colors.green.shade700,
-            ),
-          );
+          if (locationName.toLowerCase().contains('naga')) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ParksPage(locationName: locationName),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Parks for $locationName coming soon 🌳'),
+                backgroundColor: Colors.green.shade700,
+              ),
+            );
+          }
         },
       },
 
@@ -87,6 +105,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           );
         },
       },
+
       {
         "image": 'assets/inuman.png',
         "name": "Bars",
@@ -126,10 +145,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
     setState(() {
       if (sortType == 'A-Z') {
         filteredCategories.sort((a, b) =>
-            a['name'].toString().toLowerCase().compareTo(b['name'].toString().toLowerCase()));
+          a['name'].toString().toLowerCase().compareTo(b['name'].toString().toLowerCase()));
       } else if (sortType == 'Z-A') {
         filteredCategories.sort((a, b) =>
-            b['name'].toString().toLowerCase().compareTo(a['name'].toString().toLowerCase()));
+          b['name'].toString().toLowerCase().compareTo(a['name'].toString().toLowerCase()));
       }
     });
   }
@@ -143,9 +162,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
     return Scaffold(
       backgroundColor: bgColor,
-      appBar: GalaHeader(
-        userPhotoUrl: user?.photoURL,
-      ),
+      appBar: GalaHeader(userPhotoUrl: user?.photoURL),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: ListView(
@@ -287,27 +304,20 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 children: filteredCategories.map((category) {
                   final String name = category['name'] as String;
 
-                  // Accent text color per category
                   final Color accent = name == 'Cafes'
-                      ? (isDarkMode
-                          ? const Color.fromARGB(255, 244, 194, 171)
-                          : const Color.fromARGB(255, 184, 101, 71))
+                      ? (isDarkMode ? const Color.fromARGB(255, 244, 194, 171)
+                                    : const Color.fromARGB(255, 184, 101, 71))
                       : name == 'Bars'
-                          ? (isDarkMode
-                              ? const Color.fromARGB(255, 149, 239, 167)
-                              : const Color.fromARGB(255, 31, 166, 35))
-                          : name == 'Beach'
-                              ? (isDarkMode
-                                  ? const Color.fromARGB(255, 162, 208, 255)
-                                  : const Color(0xFF1A73E8))
+                          ? (isDarkMode ? const Color.fromARGB(255, 149, 239, 167)
+                                        : const Color.fromARGB(255, 31, 166, 35))
+                          : name == 'Resorts'
+                              ? (isDarkMode ? const Color.fromARGB(255, 162, 208, 255)
+                                            : const Color(0xFF1A73E8))
                               : name == 'Parks'
-                                  ? (isDarkMode
-                                      ? const Color.fromARGB(255, 176, 231, 185)
-                                      : const Color(0xFF2E7D32))
-                                  : (isDarkMode
-                                      ? const Color.fromARGB(255, 174, 151, 255)
-                                      : const Color.fromARGB(255, 44, 13, 98));
-
+                                  ? (isDarkMode ? const Color.fromARGB(255, 176, 231, 185)
+                                                : const Color(0xFF2E7D32))
+                                  : (isDarkMode ? const Color.fromARGB(255, 174, 151, 255)
+                                                : const Color.fromARGB(255, 44, 13, 98));
                   return Row(
                     children: [
                       CategoryCard(
