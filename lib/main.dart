@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 // Onboarding & Pages
 import 'package:my_project/screens/onboarding/OnBoardingPage.dart';
 // ... (other imports)
+
 import 'package:my_project/screens/splash_screen.dart';
 import 'package:my_project/screens/auth/login.dart';
 import 'package:my_project/screens/profile/profile_page.dart';
