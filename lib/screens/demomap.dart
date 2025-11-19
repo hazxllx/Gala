@@ -1,59 +1,20 @@
-// NOTE: For a real application, you must configure your pubspec.yaml with:
-// dependencies:
-//   flutter:
-//     sdk: flutter
-//   flutter_map: ^6.1.0
-//   latlong2: ^0.9.0
-//   geolocator: ^11.0.0
-//   http: ^1.2.1
-//
-// If you intended to use the official AWS client, you must use the Amplify Flutter
-// packages: amplify_flutter. As of the latest updates, Geo features are typically accessed
-// via the main Amplify SDK or custom integrations, as a dedicated 'amplify_geo' plugin
-// is not available on pub.dev. The mock code below bypasses this by making direct HTTP
-// calls, which is NOT secure for production.
+// demomap.dart (Keep this file separate as it was before)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-// --- AWS CONFIGURATION PLACEHOLDERS ---
-// IMPORTANT: In a production app, use AWS Amplify (amplify_flutter) for secure SigV4 signing,
-// not hardcoded API keys or unauthenticated access, which is why the code below is mocked.
-const String _AWS_REGION = 'us-east-1';
-const String _MAP_NAME = 'MyAwsMap';
+// --- MOCK AWS CONFIGURATION PLACEHOLDERS ---
+const String _AWS_REGION = 'ap-southeast-2';
+const String _API_KEY = 'v1.public.eyJqdGkiOiJmODM2YmQ1MC1kODM5LTQyYTEtYWI3ZS1iZjRiYjg1ODM1MzcifWHOwa4-W2YE3a_6zUNhYPytUp7pbcab_KIEHqEmn3mhkWJ8ibuYhKOOSAjMbMbZRhinGFPmxHxIICcB7AeBES8-WlNQEGWoy-46sMrYv2nS9mJQ88h2E8qZOixsMH7FaYSD9q0cUE18LioPoyoJWHcHOys0ofZe1GcFE1eesYWDT7oBfv-4vat18l3DxEG8Ff6H_xXdm5Eva4pgBReSjSIu1qOm6ptG3LFRhHVbn9de2S6CyFpT623mmwIF8fjrBkDfjULj0gzm7nFhn20PAVYaAHJ4BaRTxXlZosHceOMt_TsNWLb7uf1MQIsmnB7qt1AFk2mhcHVQQBaDCZkeYY4.ZTA2OTdiZTItNzgyYy00YWI5LWFmODQtZjdkYmJkODNkMmFh';
+const String _MAP_NAME = 'MyAppMap';
 const String _PLACE_INDEX = 'MyAwsPlaceIndex';
 const String _ROUTE_CALCULATOR = 'MyAwsRouteCalculator';
-
-// Amazon Location Service Map Tile URL (Mock Structure)
-// Note: Actual AWS Location tiles require SigV4 authentication via Amplify.
-// This URL is a placeholder and will likely fail without proper authentication.
 const String _TILE_URL =
-    'https://maps.geo.$_AWS_REGION.amazonaws.com/maps/v0/maps/$_MAP_NAME/tiles/{z}/{x}/{y}';
-
-void main() {
-  runApp(const LocationApp());
-}
-
-class LocationApp extends StatelessWidget {
-  const LocationApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'AWS Geo Navigator',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        useMaterial3: true,
-      ),
-      home: const MapScreen(),
-    );
-  }
-}
+    'https://maps.geo.$_AWS_REGION.amazonaws.com/maps/v0/maps/$_MAP_NAME/tiles/{z}/{x}/{y}?key=$_API_KEY';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -63,65 +24,74 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  // Coordinates (San Francisco as default center)
   LatLng _mapCenter = const LatLng(37.7749, -122.4194);
   final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
 
-  // State for search results and route
   List<Marker> _markers = [];
   List<LatLng> _routePoints = [];
   String _statusMessage = 'Ready to search!';
 
-  // --- MOCK LOCATION (Replaced by geolocator in a real app) ---
-  // In a real app, use the geolocator package to get the current location.
   Future<void> _getCurrentLocation() async {
     setState(() {
-      _statusMessage = 'Simulating getting current location...';
+      _statusMessage = 'Getting location...';
     });
-    // This is where geolocator or an AWS Tracker call would go.
-    // Simulating a result after a short delay
+
+    // NOTE: In a real app, use the 'geolocator' package here.
+    // For this demo, we simulate a starting location (e.g., Naga City or SF).
     await Future.delayed(const Duration(seconds: 1));
-    const currentLocation = LatLng(37.7874, -122.4048); // SF Transamerica Pyramid
+    const currentLocation = LatLng(37.7874, -122.4048); // Simulating SF for demo consistency
+
+    if (!mounted) return;
+
     _updateMap(currentLocation, 'Current Location');
     setState(() {
       _mapCenter = currentLocation;
       _statusMessage = 'Location Found!';
     });
-    _mapController.move(_mapCenter, 14.0);
+
+    // Safe movement of map
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _mapController.move(_mapCenter, 14.0);
+    });
   }
 
-  // --- AWS LOCATION SERVICE: Search/Geocode ---
   Future<void> _searchPlace(String query) async {
     if (query.isEmpty) return;
-
     setState(() {
       _statusMessage = 'Searching for "$query"...';
       _markers = [];
       _routePoints = [];
     });
 
-    // MOCK: Replace this with an authenticated AWS call (e.g., via Amplify or AWS SDK).
-    final url =
-        'https://places.geo.$_AWS_REGION.amazonaws.com/places/v0/indexes/$_PLACE_INDEX/search?text=$query';
+    final url = Uri.parse(
+        'https://places.geo.$_AWS_REGION.amazonaws.com/places/v0/indexes/$_PLACE_INDEX/search/text?key=$_API_KEY');
 
     try {
-      // NOTE: Actual AWS calls require SigV4 signing via Amplify, not a direct http request.
-      final response = await http.get(Uri.parse(url));
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'Text': query,
+          'MaxResults': 5,
+        }),
+      );
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
-        // --- MOCK RESPONSE HANDLING (Since we can't make a real AWS call) ---
-        // In a real response, parse the GeoJSON data returned by Amplify Geo.
-        final mockResults = [
-          {'lat': 37.8086, 'lng': -122.4098, 'name': 'Pier 39'},
-          {'lat': 37.7858, 'lng': -122.4064, 'name': 'Museum of Modern Art'},
-        ];
-        
-        if (mockResults.isNotEmpty) {
-          final firstResult = LatLng(mockResults.first['lat'] as double, mockResults.first['lng'] as double);
-          _updateMap(firstResult, mockResults.first['name'] as String);
+        final data = jsonDecode(response.body);
+        final results = data['Results'] as List;
+
+        if (results.isNotEmpty) {
+          // AWS returns [Longitude, Latitude]
+          final point = results[0]['Place']['Geometry']['Point'];
+          final firstResult = LatLng(point[1], point[0]);
+          final label = results[0]['Place']['Label'] ?? query;
+
+          _updateMap(firstResult, label);
           setState(() {
-            _statusMessage = 'Found ${mockResults.length} results.';
+            _statusMessage = 'Found: $label';
           });
           _mapController.move(firstResult, 14.0);
         } else {
@@ -131,58 +101,70 @@ class _MapScreenState extends State<MapScreen> {
         }
       } else {
         setState(() {
-          _statusMessage = 'Search failed (Mocked: Status ${response.statusCode}).';
+          _statusMessage = 'Search Failed: ${response.statusCode} ${response.body}';
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _statusMessage = 'Error during search: $e';
+        _statusMessage = 'Error: $e';
       });
     }
   }
 
-  // --- AWS LOCATION SERVICE: Route Calculation ---
   Future<void> _calculateRoute(LatLng start, LatLng end) async {
     setState(() {
       _statusMessage = 'Calculating route...';
       _routePoints = [];
     });
 
-    // MOCK: Replace this with an authenticated AWS call (e.g., via Amplify or AWS SDK).
-    // Departure and Destination are [Longitude, Latitude] in AWS
-    final startLonLat = '${start.longitude},${start.latitude}';
-    final endLonLat = '${end.longitude},${end.latitude}';
-    
-    final url =
-        'https://routes.geo.$_AWS_REGION.amazonaws.com/routes/v0/calculators/$_ROUTE_CALCULATOR/calculateRoute?DeparturePosition=$startLonLat&DestinationPosition=$endLonLat';
+    // AWS Location Service Route Endpoint (POST)
+    final url = Uri.parse(
+        'https://routes.geo.$_AWS_REGION.amazonaws.com/routes/v0/calculators/$_ROUTE_CALCULATOR/calculate/route?key=$_API_KEY');
 
     try {
-      // NOTE: Actual AWS calls require SigV4 signing via Amplify.
-      final response = await http.get(Uri.parse(url));
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          // AWS expects [Longitude, Latitude]
+          'DeparturePosition': [start.longitude, start.latitude],
+          'DestinationPosition': [end.longitude, end.latitude],
+          'IncludeLegGeometry': true, // Required to get the path line
+          'TravelMode': 'Car',
+          'DistanceUnit': 'Kilometers'
+        }),
+      );
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
-        // --- MOCK ROUTE HANDLING (Simulating a simple straight line route) ---
-        // In a real response, parse the line geometry from the GeoJSON returned by AWS.
-        
-        final mockRoute = [
-          start,
-          // A middle point to make it look like a route
-          LatLng((start.latitude + end.latitude) / 2, (start.longitude + end.longitude) / 2), 
-          end
-        ];
+        final data = jsonDecode(response.body);
 
-        setState(() {
-          _routePoints = mockRoute;
-          _statusMessage = 'Route calculated! (Total points: ${_routePoints.length})';
-        });
+        // Parse the geometry line string
+        final legs = data['Legs'] as List;
+        if (legs.isNotEmpty) {
+          final geometry = legs[0]['Geometry']['LineString'] as List;
+
+          // Convert AWS [Lon, Lat] list to Flutter [LatLng] list
+          final List<LatLng> path = geometry.map((coord) {
+            return LatLng(coord[1], coord[0]);
+          }).toList();
+
+          setState(() {
+            _routePoints = path;
+            _statusMessage = 'Route found! ${data['Summary']['Distance'].toStringAsFixed(1)} km';
+          });
+        }
       } else {
         setState(() {
-          _statusMessage = 'Route calculation failed (Mocked: Status ${response.statusCode}).';
+          _statusMessage = 'Route Failed: ${response.statusCode}';
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _statusMessage = 'Error calculating route: $e';
+        _statusMessage = 'Error: $e';
       });
     }
   }
@@ -211,11 +193,18 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('AWS Geo Navigator'),
         backgroundColor: Colors.blueGrey,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.my_location),
@@ -224,31 +213,28 @@ class _MapScreenState extends State<MapScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.alt_route),
-            onPressed: () => _calculateRoute(_mapCenter, const LatLng(37.8272, -122.4233)), // Center to Alcatraz
-            tooltip: 'Find Route to Alcatraz (Mock)',
+            // Example route: Current Center -> Fixed Point (e.g., Coit Tower)
+            onPressed: () => _calculateRoute(_mapCenter, const LatLng(37.8024, -122.4058)),
+            tooltip: 'Route Demo',
           ),
         ],
       ),
       body: Stack(
         children: [
-          // --- Map Display (MapLibre/Amazon Location Service) ---
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _mapCenter,
               initialZoom: 12.0,
               onTap: (tapPosition, latLng) {
-                 _updateMap(latLng, 'Selected Point');
-                 setState(() {
-                    _statusMessage = 'Tapped: ${latLng.latitude.toStringAsFixed(4)}, ${latLng.longitude.toStringAsFixed(4)}';
-                 });
+                _updateMap(latLng, 'Selected Point');
+                print("Tapped: ${latLng.latitude}, ${latLng.longitude}");
               },
             ),
             children: [
               TileLayer(
-                // This is the core connection to Amazon Location Service map tiles.
-                // In a real app, this URL must be dynamically generated and authenticated with SigV4 credentials via Amplify.
-                urlTemplate: _TILE_URL, 
+                urlTemplate: _TILE_URL,
+                userAgentPackageName: 'com.example.app',
               ),
               PolylineLayer(
                 polylines: [
@@ -262,8 +248,6 @@ class _MapScreenState extends State<MapScreen> {
               MarkerLayer(markers: _markers),
             ],
           ),
-
-          // --- Search Bar ---
           Positioned(
             top: 10,
             left: 10,
@@ -276,7 +260,7 @@ class _MapScreenState extends State<MapScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search place (e.g., Starbucks, market)',
+                    hintText: 'Search place (e.g., Starbucks)',
                     border: InputBorder.none,
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.search, color: Colors.blueGrey),
@@ -288,16 +272,14 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ),
-          
-          // --- Status Message/Footer ---
           Positioned(
-            bottom: 10,
-            left: 10,
-            right: 10,
+            bottom: 20,
+            left: 20,
+            right: 20,
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.black54,
+                color: Colors.black87,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -307,16 +289,6 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ),
-
-          // --- Manual Attribution Placement (since TileLayer parameter was removed) ---
-          Positioned(
-            bottom: 5,
-            right: 5,
-            child: Text(
-              'Map data: AWS Location Service',
-              style: TextStyle(color: Colors.black54, fontSize: 10),
-            ),
-          )
         ],
       ),
     );

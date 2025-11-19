@@ -5,6 +5,7 @@ import 'package:my_project/screens/home/pili_cafe/pili_cafe.dart' as pili;
 import 'package:my_project/screens/home/naga_bars.dart' as bars;
 import 'package:my_project/screens/home/header.dart';
 import 'package:my_project/screens/home/directions_screen.dart';
+import 'package:my_project/screens/demomap.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String locationName;

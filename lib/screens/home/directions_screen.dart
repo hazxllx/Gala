@@ -42,6 +42,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   Location? _startLocation; // Holds the Location object for the start
   late final TextEditingController _destinationController;
   late final TextEditingController _startController;
+  LatLng? _pendingLocation;
 
   LatLng? _currentLocation;
   LatLng? _destinationLocation;
@@ -77,6 +78,8 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     _destinationController = TextEditingController();
     _startController = TextEditingController();
 
+    _getCurrentLocation();
+
     // 2. Set default start text
     _startController.text = _startName;
 
@@ -86,7 +89,6 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     _startController.addListener(_handleStartTextChange);
 
     // 4. Get location and set default start coordinates
-    _getCurrentLocation();
 
     // 5. Focus listeners for both search fields
     _searchFocusNode.addListener(() {
@@ -114,6 +116,37 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     });
   }
 
+  void _setFinalMarkers() {
+    List<Marker> finalMarkers = [];
+
+    // 1. Add Permanent START Marker (Green - trip_origin)
+    if (_startLocation != null) {
+      finalMarkers.add(
+        Marker(
+          point: LatLng(_startLocation!.latitude, _startLocation!.longitude),
+          width: 50,
+          height: 50,
+          child: const Icon(Icons.trip_origin, color: Colors.green, size: 40),
+        ),
+      );
+    }
+
+    // 2. Add Permanent DESTINATION Marker (Red - location_on)
+    if (_destinationLocation != null) {
+      finalMarkers.add(
+        Marker(
+          point: _destinationLocation!,
+          width: 50,
+          height: 50,
+          child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+        ),
+      );
+    }
+
+    setState(() {
+      _markers = finalMarkers;
+    });
+  }
   void _swapLocations() {
     setState(() {
       // Swap names/controllers
@@ -201,6 +234,93 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     }
   }
 
+
+  // Function to reverse geocode the map center and update the Start Input
+  Future<void> _updateStartLocationFromMapCenter(LatLng center) async {
+    // Prevent geocoding while still waiting for initial GPS load
+    if (_isLoading) return;
+
+    // Set the current location to the map center (used for initial map position and routing)
+    _currentLocation = center;
+
+    final fallbackName =
+        'Lat: ${center.latitude.toStringAsFixed(4)}, Lng: ${center.longitude.toStringAsFixed(4)}';
+    try {
+      // Perform Reverse Geocoding
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        center.latitude,
+        center.longitude,
+      );
+
+      if (!mounted) return;
+
+      String newStartName;
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks.first;
+        // Construct a meaningful address name
+        newStartName =
+            place.street ??
+                place.thoroughfare ??
+                place.locality ??
+                place.subLocality ??
+                fallbackName;
+      } else {
+        newStartName = fallbackName;
+      }
+
+      setState(() {
+        _startName = newStartName;
+        _startController.text = _startName;
+        _startLocation = Location(
+          latitude: center.latitude,
+          longitude: center.longitude,
+          timestamp: DateTime.now(),
+        );
+
+        // Update permanent markers immediately
+        _markers = [
+          Marker( // Permanent Start Marker
+            point: center,
+            width: 50,
+            height: 50,
+            child: const Icon(Icons.location_on, color: Colors.green, size: 40),
+          ),
+          if (_destinationLocation != null)
+            Marker( // Permanent Destination Marker
+              point: _destinationLocation!,
+              width: 50,
+              height: 50,
+              child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+            ),
+        ];
+      });
+
+      // If a destination is already set, recalculate the route from the new start point
+      if (_destinationLocation != null) {
+        _calculateRoute(center, _destinationLocation!);
+      }
+
+    } catch (e) {
+      if (!mounted) return;
+      // Fallback if geocoding fails (e.g., no internet)
+      setState(() {
+        _startName = fallbackName;
+        _startController.text = _startName;
+        _startLocation = Location(
+          latitude: center.latitude,
+          longitude: center.longitude,
+          timestamp: DateTime.now(),
+        );
+      });
+      print('Reverse Geocoding failed: $e');
+    }
+  }
+
+// NOTE: You should adjust your _addCurrentLocationMarker to use _updateMarkers if you implemented that previously.
+// For now, the fixed pin will serve as the primary marker.
+
+
+
   Future<void> _getCurrentLocation() async {
     setState(() {
       _isLoading = true;
@@ -247,6 +367,8 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
+      if (!mounted) return;
+
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
         _isLoading = false;
@@ -260,7 +382,13 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       _addCurrentLocationMarker();
 
       // Move map to current location
-      _mapController.move(_currentLocation!, 14.0);
+      try {
+        _mapController.move(_currentLocation!, 14.0);
+
+      }
+      catch(e){
+
+      }
     } catch (e) {
       setState(() {
         _errorMessage = 'Failed to get current location: $e';
@@ -268,7 +396,73 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       });
     }
   }
+  Future<void> _confirmPinnedLocation() async {
+    if (_pendingLocation == null) return;
 
+    final center = _pendingLocation!;
+    final bool isStart = _startSearchFocusNode.hasFocus;
+
+    // 1. Temporarily clear pending location and lose focus to hide the fixed pin
+    setState(() {
+      _pendingLocation = null;
+      if (isStart) {
+        _startSearchFocusNode.unfocus();
+      } else {
+        _searchFocusNode.unfocus();
+      }
+    });
+
+    // Now perform the reverse geocoding and final state update
+    final fallbackName =
+        'Lat: ${center.latitude.toStringAsFixed(4)}, Lng: ${center.longitude.toStringAsFixed(4)}';
+
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(center.latitude, center.longitude);
+      if (!mounted) return;
+
+      String finalName = fallbackName;
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks.first;
+        finalName = place.street ?? place.thoroughfare ?? place.locality ?? place.subLocality ?? fallbackName;
+      }
+
+      // 2. Final State Update based on which field was focused
+      setState(() {
+        if (isStart) {
+          _startName = finalName;
+          _startController.text = finalName;
+          _startLocation = Location(latitude: center.latitude, longitude: center.longitude, timestamp: DateTime.now());
+        } else {
+          _destinationName = finalName;
+          _destinationController.text = finalName;
+          _destinationLocation = center; // LatLng
+        }
+      });
+
+      // 3. Place the permanent marker and calculate the route
+      _setFinalMarkers();
+      if (_startLocation != null && _destinationLocation != null) {
+        _calculateRoute(LatLng(_startLocation!.latitude, _startLocation!.longitude), _destinationLocation!);
+      }
+
+    } catch (e) {
+      // Handle error/fallback (Applies to whichever field was active)
+      if (!mounted) return;
+      setState(() {
+        if (isStart) {
+          _startName = fallbackName;
+          _startController.text = fallbackName;
+          _startLocation = Location(latitude: center.latitude, longitude: center.longitude, timestamp: DateTime.now());
+        } else {
+          _destinationName = fallbackName;
+          _destinationController.text = fallbackName;
+          _destinationLocation = center;
+        }
+      });
+      _setFinalMarkers();
+      print('Confirmation Geocoding failed: $e');
+    }
+  }
   void _addCurrentLocationMarker() {
     if (_currentLocation == null) return;
 
@@ -412,17 +606,21 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       // Add destination marker
       setState(() {
         _markers = [
-          Marker(
-            point: _currentLocation!,
-            width: 50,
-            height: 50,
-            child: const Icon(Icons.my_location, color: Colors.blue, size: 40),
-          ),
+          // 1. Permanent Start Marker (Icons.trip_origin)
+          if (_startLocation != null)
+            Marker(
+              point: LatLng(_startLocation!.latitude, _startLocation!.longitude),
+              width: 50,
+              height: 50,
+              child: const Icon(Icons.trip_origin, color: Colors.green, size: 40),
+            ),
+
+          // 2. Permanent Destination Marker (Icons.location_on)
           Marker(
             point: _destinationLocation!,
             width: 50,
             height: 50,
-            child: const Icon(Icons.location_on, color: Colors.red, size: 50),
+            child: const Icon(Icons.location_on, color: Colors.red, size: 40),
           ),
         ];
       });
@@ -1335,6 +1533,22 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
                 initialZoom: 14.0,
                 minZoom: 5.0,
                 maxZoom: 18.0,
+                onMapEvent: (MapEvent event) {
+                  if (event is MapEventMoveEnd) {
+                    // FIX: Allow either focus node to capture the center
+                    if (_startSearchFocusNode.hasFocus || _searchFocusNode.hasFocus) {
+                      final center = _mapController.camera.center;
+
+                      // FIX: Update pending location to trigger the confirm button
+                      setState(() {
+                        _pendingLocation = center;
+                      });
+                    }
+                  }
+                },
+                onMapReady: () {
+                  _getCurrentLocation();
+                },
                 onTap: (tapPosition, latLng) {
                   // Close suggestions when map is tapped
                   _removeOverlay();
@@ -1375,7 +1589,13 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
                     ],
                   ),
                 // Markers
-                MarkerLayer(markers: _markers),
+                // Markers
+                MarkerLayer(
+                  markers: _markers.where((marker) {
+                    // FIX: Hide all existing permanent markers when in selection mode
+                    return !_startSearchFocusNode.hasFocus && !_searchFocusNode.hasFocus;
+                  }).toList(),
+                ),
               ],
             )
           else
@@ -1410,7 +1630,22 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
                         ],
                       ),
             ),
-
+          if (_currentLocation != null && (_startSearchFocusNode.hasFocus || _searchFocusNode.hasFocus))
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.location_on,
+                    // Dynamic color based on focus: Green for Start, Red for Destination
+                    color: _startSearchFocusNode.hasFocus ? Colors.green : Colors.red,
+                    size: 40,
+                  ),
+                  const Padding(padding: EdgeInsets.only(bottom: 20)),
+                ],
+              ),
+            ),
           // Search bar
           Positioned(
             top: 16,
@@ -1465,7 +1700,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
                           // Start Address Input (Default: Current Location)
                           TextField(
                             controller: _startController,
-                            focusNode: _searchFocusNode,
+                            focusNode: _startSearchFocusNode,
                             style: TextStyle(color: textColor),
                             decoration: InputDecoration(
                               hintText: 'Start location (Current Location)',
@@ -1488,6 +1723,38 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
                               setState(() {
                                 _startName = value;
                               });
+                            },
+
+                            // 🎯 NEW FIX: Add the onChanged handler for suggestions 🎯
+                            onChanged: (value) {
+                              // Synchronize the shared search controller with the Start input text
+                              _searchController.text = value;
+
+                              // Check if we should fetch suggestions
+                              if (value.length >= 2) {
+                                _getSearchSuggestions(value);
+
+                                // FIX: Show the overlay if the Start field is active
+                                if (_startSearchFocusNode.hasFocus) {
+                                  // We rely on _getSearchSuggestions to populate _searchSuggestions
+                                  // and then call _showSuggestionsOverlay() if results are found.
+                                  // We need to call _showSuggestionsOverlay() here for immediate display if there's already data.
+                                  Future.delayed(const Duration(milliseconds: 10), () {
+                                    if (_showSuggestions && _startSearchFocusNode.hasFocus) {
+                                      _showSuggestionsOverlay();
+                                    }
+                                  });
+
+                                }
+
+                              } else {
+                                // Clear suggestions if input is too short
+                                _removeOverlay();
+                                setState(() {
+                                  _showSuggestions = false;
+                                  _searchSuggestions = [];
+                                });
+                              }
                             },
                           ),
                           Divider(height: 1, color: Colors.grey[300]),
@@ -1552,7 +1819,26 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
               ),
             ),
           ),
-
+          if (_pendingLocation != null)
+            Positioned(
+              bottom: 100, // Position it above the info/quick filters
+              left: 0,
+              right: 0,
+              child: Center(
+                child: ElevatedButton.icon(
+                  onPressed: _confirmPinnedLocation,
+                  icon: const Icon(Icons.check, size: 20),
+                  label: const Text('Confirm Location', style: TextStyle(fontSize: 16)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    elevation: 5,
+                  ),
+                ),
+              ),
+            ),
           // Quick filter chips for common place types
           if (_currentLocation != null && _searchController.text.isEmpty)
             Positioned(
