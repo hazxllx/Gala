@@ -2,6 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:my_project/screens/favorites.dart';
+import 'package:my_project/screens/onboarding/allow_location_page.dart';
+import 'package:my_project/screens/onboarding/find_your_place_page.dart';
+import 'package:my_project/screens/onboarding/set_current_location_page.dart';
+import 'package:my_project/screens/onboarding/set_location.dart';
+import 'package:my_project/screens/onboarding/success_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 
