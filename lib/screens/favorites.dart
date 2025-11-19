@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+
 import 'package:my_project/screens/home/arcodiez/arco_diez.dart';
 import 'package:my_project/screens/home/harina/harina.dart';
+
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -11,22 +13,26 @@ class FavoritesScreen extends StatefulWidget {
   State<FavoritesScreen> createState() => _FavoritesScreenState();
 }
 
+
 class _CategoryData {
   final String label;
   final IconData icon;
   const _CategoryData(this.label, this.icon);
 }
 
+
 class _FavoritesScreenState extends State<FavoritesScreen> {
   User? user;
   late final CollectionReference favoritesRef;
   final List<_CategoryData> categories = const [
     _CategoryData('Cafes', Icons.local_cafe),
-    _CategoryData('Fast Food Chains', Icons.fastfood),
+    _CategoryData('Parks', Icons.park),
+    _CategoryData('Resorts', Icons.villa),
     _CategoryData('Restaurants', Icons.restaurant),
     _CategoryData('Bars', Icons.local_bar),
   ];
   int selectedCategoryIndex = 0;
+
 
   @override
   void initState() {
@@ -40,6 +46,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
   }
 
+
   String _extractCityName(String subtitle) {
     final cities = ['Naga City', 'Pili', 'Siruma', 'Caramoan', 'Pasacao', 'Tinambac'];
     
@@ -51,6 +58,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     
     return 'Unknown City';
   }
+
 
   Map<String, List<Map<String, dynamic>>> _groupByCity(List<Map<String, dynamic>> items) {
     final Map<String, List<Map<String, dynamic>>> grouped = {};
@@ -65,6 +73,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     
     return grouped;
   }
+
 
   void _navigateToDetail(BuildContext context, String cafeTitle) {
     if (cafeTitle == 'Arco Diez Cafe') {
@@ -84,6 +93,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
   }
 
+
   Future<String> _getEstablishmentType(String establishmentName) async {
     try {
       final doc = await FirebaseFirestore.instance
@@ -101,19 +111,23 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return 'Cafe';
   }
 
+
   String _normalizeType(String type) {
     final normalized = type.toLowerCase().trim();
     if (normalized == 'bar') return 'Bar';
     if (normalized == 'cafe' || normalized == 'café') return 'Cafe';
     if (normalized == 'restaurant') return 'Restaurant';
-    if (normalized.contains('fast') && normalized.contains('food')) return 'Fast Food';
+    if (normalized == 'park' || normalized.contains('park')) return 'Park';
+    if (normalized == 'resort' || normalized.contains('resort')) return 'Resort';
     return type;
   }
+
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
 
     if (user == null) {
       return Scaffold(
@@ -121,6 +135,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         body: const Center(child: Text('Please log in to view favorites')),
       );
     }
+
 
     return Scaffold(
       backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xffF8F9FB),
@@ -190,6 +205,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 }
                 final docs = snapshot.data!.docs;
 
+
                 return FutureBuilder<List<Map<String, dynamic>>>(
                   future: Future.wait(
                     docs.map((doc) async {
@@ -214,6 +230,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
 
+
                     if (!futureSnapshot.hasData) {
                       return Center(
                         child: Text(
@@ -223,6 +240,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       );
                     }
 
+
                     final allItems = futureSnapshot.data!;
                     final selectedCategory = categories[selectedCategoryIndex].label;
                     
@@ -231,8 +249,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       switch (selectedCategory) {
                         case 'Cafes':
                           return itemType == 'Cafe';
-                        case 'Fast Food Chains':
-                          return itemType == 'Fast Food';
+                        case 'Parks':
+                          return itemType == 'Park';
+                        case 'Resorts':
+                          return itemType == 'Resort';
                         case 'Restaurants':
                           return itemType == 'Restaurant';
                         case 'Bars':
@@ -241,6 +261,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           return true;
                       }
                     }).toList();
+
 
                     if (filteredItems.isEmpty) {
                       return Center(
@@ -251,7 +272,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       );
                     }
 
+
                     final groupedByCity = _groupByCity(filteredItems);
+
 
                     return ListView.builder(
                       padding: const EdgeInsets.only(bottom: 20),
@@ -259,6 +282,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       itemBuilder: (context, index) {
                         final cityName = groupedByCity.keys.elementAt(index);
                         final cityItems = groupedByCity[cityName]!;
+
 
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,6 +346,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 }
 
+
 class _CategoryPill extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -334,15 +359,18 @@ class _CategoryPill extends StatelessWidget {
     required this.onTap,
   });
 
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+
     final Color selectedBackground = isDark ? const Color(0xFF0C57E5) : const Color(0xFF1764E8);
     final Color selectedText = Colors.white;
     final Color unselectedText = isDark ? Colors.white : Colors.black87;
     final Color unselectedIcon = isDark ? Colors.white : Colors.black54;
+
 
     return Material(
       color: selected
@@ -378,6 +406,7 @@ class _CategoryPill extends StatelessWidget {
   }
 }
 
+
 class _CityCarousel extends StatefulWidget {
   final List<Map<String, dynamic>> items;
   final Function(String id) onUnfavorite;
@@ -388,13 +417,16 @@ class _CityCarousel extends StatefulWidget {
     required this.onTap,
   });
 
+
   @override
   State<_CityCarousel> createState() => _CityCarouselState();
 }
 
+
 class _CityCarouselState extends State<_CityCarousel> {
   late PageController _pageController;
   int _page = 0;
+
 
   @override
   void initState() {
@@ -409,11 +441,13 @@ class _CityCarouselState extends State<_CityCarousel> {
     });
   }
 
+
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -465,12 +499,14 @@ class _CityCarouselState extends State<_CityCarousel> {
   }
 }
 
+
 class _CarouselFavoriteCard extends StatelessWidget {
   final String imagePath;
   final String cafeTitle;
   final String subtitle;
   final VoidCallback onUnfavorite;
   final VoidCallback onTap;
+
 
   const _CarouselFavoriteCard({
     required this.imagePath,
@@ -479,6 +515,7 @@ class _CarouselFavoriteCard extends StatelessWidget {
     required this.onUnfavorite,
     required this.onTap,
   });
+
 
   Stream<({double? average, int count})> getRatingInfo() {
     final ref = FirebaseFirestore.instance
@@ -495,7 +532,9 @@ class _CarouselFavoriteCard extends StatelessWidget {
     });
   }
 
+
   bool get isNetworkImage => imagePath.startsWith('http://') || imagePath.startsWith('https://');
+
 
   @override
   Widget build(BuildContext context) {
@@ -649,6 +688,7 @@ class _CarouselFavoriteCard extends StatelessWidget {
   }
 }
 
+
 class ViewAllScreen extends StatelessWidget {
   final String title;
   final List<Map<String, dynamic>> items;
@@ -659,6 +699,7 @@ class ViewAllScreen extends StatelessWidget {
     required this.items,
     required this.onTap,
   });
+
 
   @override
   Widget build(BuildContext context) {
@@ -704,11 +745,13 @@ class ViewAllScreen extends StatelessWidget {
   }
 }
 
+
 class _ViewAllFavoriteCard extends StatelessWidget {
   final String imagePath;
   final String cafeTitle;
   final String subtitle;
   final VoidCallback onTap;
+
 
   const _ViewAllFavoriteCard({
     required this.imagePath,
@@ -716,6 +759,7 @@ class _ViewAllFavoriteCard extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
   });
+
 
   Stream<({double? average, int count})> getRatingInfo() {
     final ref = FirebaseFirestore.instance
@@ -732,7 +776,9 @@ class _ViewAllFavoriteCard extends StatelessWidget {
     });
   }
 
+
   bool get isNetworkImage => imagePath.startsWith('http://') || imagePath.startsWith('https://');
+
 
   @override
   Widget build(BuildContext context) {

@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'change_password_page.dart';
 import 'report_problem_page.dart';
 import 'privacy_settings_page.dart';
 import 'package:my_project/theme/theme_notifier.dart';
 
+
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
+
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
+
 
 class _SettingsPageState extends State<SettingsPage> {
   bool notificationsEnabled = true;
@@ -19,11 +23,13 @@ class _SettingsPageState extends State<SettingsPage> {
   bool dataCollectionEnabled = true;
   bool analyticsEnabled = true;
 
+
   @override
   void initState() {
     super.initState();
     _loadSettings();
   }
+
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
@@ -34,6 +40,7 @@ class _SettingsPageState extends State<SettingsPage> {
       analyticsEnabled = prefs.getBool('analytics_enabled') ?? true;
     });
   }
+
 
   Future<void> _saveSetting(String key, dynamic value) async {
     final prefs = await SharedPreferences.getInstance();
@@ -48,6 +55,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+
   void showMessage(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -57,6 +65,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+
   void _toggleNotifications(bool value) async {
     setState(() {
       notificationsEnabled = value;
@@ -65,11 +74,73 @@ class _SettingsPageState extends State<SettingsPage> {
     showMessage(context, "Notifications ${value ? 'enabled' : 'disabled'}");
   }
 
+
+  // Logout function
+  Future<void> _logout() async {
+    // Show confirmation dialog
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+
+    if (shouldLogout != true) return;
+
+
+    try {
+      // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+
+
+      // Clear SharedPreferences login state
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', false);
+      await prefs.remove('username');
+
+
+      if (!mounted) return;
+
+
+      // Navigate to splash/auth screen
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/splash_auth',
+        (route) => false,
+      );
+
+
+      showMessage(context, 'Logged out successfully');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeNotifier>(context);
     final isDark = themeProvider.isDarkMode;
     final theme = Theme.of(context);
+
 
     return Scaffold(
       body: Stack(
@@ -228,6 +299,12 @@ class _SettingsPageState extends State<SettingsPage> {
                                     );
                                   },
                                 ),
+                                SettingItem(
+                                  icon: Icons.logout,
+                                  title: 'Logout',
+                                  titleColor: Colors.red,
+                                  onTap: _logout,
+                                ),
                               ],
                               isDark,
                               theme,
@@ -258,6 +335,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
   }
+
 
   Widget buildSection(
       String title, List<Widget> items, bool isDark, ThemeData theme) {
@@ -300,7 +378,9 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 }
 
+
 // === Item Widgets (unchanged logic) ===
+
 
 class SettingItem extends StatelessWidget {
   final IconData icon;
@@ -308,6 +388,7 @@ class SettingItem extends StatelessWidget {
   final String? subtitle;
   final VoidCallback onTap;
   final Color? titleColor;
+
 
   const SettingItem({
     Key? key,
@@ -318,10 +399,12 @@ class SettingItem extends StatelessWidget {
     this.titleColor,
   }) : super(key: key);
 
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
+
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
@@ -352,11 +435,13 @@ class SettingItem extends StatelessWidget {
   }
 }
 
+
 class SwitchSettingItem extends StatelessWidget {
   final IconData icon;
   final String title;
   final bool value;
   final ValueChanged<bool> onChanged;
+
 
   const SwitchSettingItem({
     Key? key,
@@ -366,10 +451,12 @@ class SwitchSettingItem extends StatelessWidget {
     required this.onChanged,
   }) : super(key: key);
 
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
+
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),

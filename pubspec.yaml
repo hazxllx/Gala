@@ -11,6 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   geolocator: ^10.1.0
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
   geocoding: ^3.0.0 
   shared_preferences: ^2.2.2
   provider: ^6.1.2  
@@ -21,14 +23,7 @@ dependencies:
   cloud_firestore: ^4.14.0
   firebase_storage: ^11.6.6
   cached_network_image: ^3.3.1
-  # Amplify Core
-  amplify_flutter: ^2.0.0
-  # Geo requires Auth for secure SigV4 signing
-  amplify_auth_cognito: ^2.0.0
-  # Add other map dependencies you used:
-  flutter_map: ^6.1.0
-  latlong2: ^0.9.0
-  http: ^1.2.1
+  path: ^1.9.1
 
 
 dev_dependencies:
@@ -68,7 +63,8 @@ flutter:
     - assets/tinambac.jpg
     - assets/bg_settings.png
     - assets/fare.png
-    - assets/ffchains.png
+    - assets/parks.png
+    - assets/beach.png
     - assets/nearby.png
     - assets/inuman.png
     - assets/cafe.png
