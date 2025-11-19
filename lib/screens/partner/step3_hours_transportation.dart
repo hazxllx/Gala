@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:my_project/screens/models/establishment_data.dart';
 
 class Step3HoursTransportation extends StatefulWidget {
   final EstablishmentData data;
   final VoidCallback onBack;
+  final VoidCallback onSubmit; // Add this
+  final bool isSubmitting; // Add this
 
   const Step3HoursTransportation({
     super.key,
     required this.data,
     required this.onBack,
+    required this.onSubmit, // Add this
+    required this.isSubmitting, // Add this
   });
 
   @override
@@ -19,7 +20,6 @@ class Step3HoursTransportation extends StatefulWidget {
 }
 
 class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
-  bool _isSubmitting = false;
   bool _showAllDays = false;
 
   final List<String> _presetOptions = [
@@ -138,71 +138,6 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
     );
   }
 
-  Future<List<String>> _uploadImages() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return [];
-    List<String> imageUrls = [];
-    for (int i = 0; i < widget.data.images.length; i++) {
-      try {
-        final fileName = '${user.uid}_${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
-        final ref = FirebaseStorage.instance
-            .ref()
-            .child('establishment_images')
-            .child(fileName);
-        await ref.putFile(widget.data.images[i]);
-        final downloadUrl = await ref.getDownloadURL();
-        imageUrls.add(downloadUrl);
-      } catch (e) {
-        debugPrint('Error uploading image $i: $e');
-      }
-    }
-    return imageUrls;
-  }
-
-  Future<void> _submitEstablishment() async {
-    if (!widget.data.isStep3Valid()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please add at least one transportation route'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-    setState(() => _isSubmitting = true);
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) throw Exception('User not logged in');
-      final imageUrls = await _uploadImages();
-      if (imageUrls.isEmpty) throw Exception('Failed to upload images');
-      final data = widget.data.toMap(imageUrls, user.uid, user.email ?? '');
-      data['submittedAt'] = FieldValue.serverTimestamp();
-      await FirebaseFirestore.instance
-          .collection('establishment_submissions')
-          .add(data);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Submission successful! Awaiting review.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -212,21 +147,7 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
         children: [
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                color: const Color.fromARGB(255, 11, 113, 197),
-                onPressed: widget.onBack,
-                tooltip: 'Back',
-              ),
               const SizedBox(width: 8),
-              const Text(
-                "Hours & Transportation",
-                style: TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 11, 113, 197),
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 18),
@@ -265,7 +186,7 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
                   items: _presetOptions.map((option) {
                     return DropdownMenuItem(value: option, child: Text(option));
                   }).toList(),
-                  onChanged: (value) {
+                  onChanged: widget.isSubmitting ? null : (value) {
                     setState(() {
                       _selectedPreset = value!;
                       _applyPreset();
@@ -277,7 +198,7 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => _selectTime(0, true),
+                        onTap: widget.isSubmitting ? null : () => _selectTime(0, true),
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -304,7 +225,7 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => _selectTime(0, false),
+                        onTap: widget.isSubmitting ? null : () => _selectTime(0, false),
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -335,7 +256,7 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
           ),
           const SizedBox(height: 16),
           TextButton.icon(
-            onPressed: () {
+            onPressed: widget.isSubmitting ? null : () {
               setState(() {
                 _showAllDays = !_showAllDays;
               });
@@ -387,7 +308,7 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
                             : Row(
                                 children: [
                                   GestureDetector(
-                                    onTap: () => _selectTime(index, true),
+                                    onTap: widget.isSubmitting ? null : () => _selectTime(index, true),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
@@ -412,7 +333,7 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
                                     child: Text('—'),
                                   ),
                                   GestureDetector(
-                                    onTap: () => _selectTime(index, false),
+                                    onTap: widget.isSubmitting ? null : () => _selectTime(index, false),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
@@ -437,7 +358,7 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
                       ),
                       Switch(
                         value: !businessHour.isClosed,
-                        onChanged: (value) {
+                        onChanged: widget.isSubmitting ? null : (value) {
                           setState(() => businessHour.isClosed = !value);
                         },
                         activeColor: const Color.fromARGB(255, 11, 113, 197),
@@ -462,7 +383,7 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
                 ),
               ),
               TextButton.icon(
-                onPressed: _addTransportOption,
+                onPressed: widget.isSubmitting ? null : _addTransportOption,
                 icon: const Icon(Icons.add_circle_outline),
                 label: const Text('Add Route'),
                 style: TextButton.styleFrom(
@@ -529,12 +450,12 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
                                 IconButton(
                                   icon: const Icon(Icons.edit, size: 20),
                                   color: const Color.fromARGB(255, 11, 113, 197),
-                                  onPressed: () => _editTransportOption(index),
+                                  onPressed: widget.isSubmitting ? null : () => _editTransportOption(index),
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.delete_outline, size: 20),
                                   color: Colors.red,
-                                  onPressed: () {
+                                  onPressed: widget.isSubmitting ? null : () {
                                     setState(() {
                                       widget.data.transportOptions.removeAt(index);
                                     });
@@ -639,7 +560,7 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: widget.onBack,
+                  onPressed: widget.isSubmitting ? null : widget.onBack,
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     side: const BorderSide(color: Color.fromARGB(255, 11, 113, 197)),
@@ -657,7 +578,7 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
               Expanded(
                 flex: 2,
                 child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitEstablishment,
+                  onPressed: widget.isSubmitting ? null : widget.onSubmit, // Use parent's submit function
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 11, 113, 197),
                     foregroundColor: Colors.white,
@@ -666,8 +587,9 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 2,
+                    disabledBackgroundColor: Colors.grey[400],
                   ),
-                  child: _isSubmitting
+                  child: widget.isSubmitting
                       ? const SizedBox(
                           height: 20,
                           width: 20,
@@ -696,6 +618,7 @@ class _Step3HoursTransportationState extends State<Step3HoursTransportation> {
   }
 }
 
+// Keep the _AddTransportDialog class exactly as you have it
 class _AddTransportDialog extends StatefulWidget {
   final Function(TransportationOption) onAdd;
   final TransportationOption? existingOption;

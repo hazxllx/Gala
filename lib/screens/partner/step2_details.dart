@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:my_project/screens/models/establishment_data.dart';
+import 'package:my_project/screens/map/map_picker_screen.dart'; // ✅ load your map picker
 
 class Step2Details extends StatefulWidget {
   final EstablishmentData data;
@@ -24,6 +26,8 @@ class _Step2DetailsState extends State<Step2Details> {
   late TextEditingController _contactController;
   late TextEditingController _descriptionController;
 
+  final Color primaryColor = const Color(0xFF12397C);
+
   @override
   void initState() {
     super.initState();
@@ -31,6 +35,44 @@ class _Step2DetailsState extends State<Step2Details> {
     _addressController = TextEditingController(text: widget.data.address);
     _contactController = TextEditingController(text: widget.data.contactNumber);
     _descriptionController = TextEditingController(text: widget.data.description);
+  }
+
+  Future<void> _openMapPicker() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapPickerScreen(
+          initialPosition: LatLng(widget.data.latitude, widget.data.longitude),
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        widget.data.address = result["address"];
+        widget.data.latitude = result["lat"];
+        widget.data.longitude = result["lng"];
+        _addressController.text = widget.data.address;
+      });
+    }
+  }
+
+  void _saveAndNext() {
+    if (_formKey.currentState!.validate()) {
+      if (widget.data.latitude == 0 || widget.data.longitude == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please select location on map")),
+        );
+        return;
+      }
+
+      widget.data.name = _nameController.text.trim();
+      widget.data.address = _addressController.text.trim();
+      widget.data.contactNumber = _contactController.text.trim();
+      widget.data.description = _descriptionController.text.trim();
+
+      widget.onNext();
+    }
   }
 
   @override
@@ -42,16 +84,6 @@ class _Step2DetailsState extends State<Step2Details> {
     super.dispose();
   }
 
-  void _saveAndNext() {
-    if (_formKey.currentState!.validate()) {
-      widget.data.name = _nameController.text.trim();
-      widget.data.address = _addressController.text.trim();
-      widget.data.contactNumber = _contactController.text.trim();
-      widget.data.description = _descriptionController.text.trim();
-      widget.onNext();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -61,144 +93,100 @@ class _Step2DetailsState extends State<Step2Details> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 11, 113, 197).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color.fromARGB(255, 11, 113, 197).withOpacity(0.3),
-                ),
-              ),
-              child: Column(
-                children: [
-                  const Icon(
-                    Icons.info_outline,
-                    size: 48,
-                    color: Color.fromARGB(255, 11, 113, 197),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Establishment Details',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 11, 113, 197),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Step 2: Provide complete information',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
             TextFormField(
               controller: _nameController,
               decoration: InputDecoration(
                 labelText: 'Establishment Name',
                 prefixIcon: const Icon(Icons.store),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
                 fillColor: Colors.grey[50],
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter establishment name';
-                }
-                return null;
-              },
+              validator: (value) =>
+                  value == null || value.trim().isEmpty ? 'Please enter establishment name' : null,
             ),
             const SizedBox(height: 20),
-            TextFormField(
-              controller: _addressController,
-              decoration: InputDecoration(
-                labelText: 'Complete Address',
-                prefixIcon: const Icon(Icons.location_on),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+
+            // ✅ Click Address → Open Map Picker
+            GestureDetector(
+              onTap: _openMapPicker,
+              child: AbsorbPointer(
+                child: TextFormField(
+                  controller: _addressController,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: 'Complete Address (Tap to pin on map)',
+                    prefixIcon: const Icon(Icons.location_pin),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                  ),
+                  validator: (value) =>
+                      value == null || value.trim().isEmpty ? 'Select location from map' : null,
                 ),
-                filled: true,
-                fillColor: Colors.grey[50],
               ),
-              maxLines: 2,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter complete address';
-                }
-                return null;
-              },
             ),
+
+            const SizedBox(height: 6),
+
+            // ✅ Show Lat & Lng if selected
+            if (widget.data.latitude != 0)
+              Text(
+                "📍 Lat: ${widget.data.latitude.toStringAsFixed(6)}, "
+                "Lng: ${widget.data.longitude.toStringAsFixed(6)}",
+                style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+              ),
+
             const SizedBox(height: 20),
+
             TextFormField(
               controller: _contactController,
               decoration: InputDecoration(
                 labelText: 'Contact Number',
                 prefixIcon: const Icon(Icons.phone),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
                 fillColor: Colors.grey[50],
               ),
               keyboardType: TextInputType.phone,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter contact number';
-                }
-                return null;
-              },
+              validator: (value) =>
+                  value == null || value.trim().isEmpty ? 'Please enter contact number' : null,
             ),
             const SizedBox(height: 20),
+
             TextFormField(
               controller: _descriptionController,
+              maxLines: 4,
               decoration: InputDecoration(
                 labelText: 'Description',
-                hintText: 'Tell us about your establishment',
                 prefixIcon: const Icon(Icons.description),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                hintText: 'Tell us about your establishment',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
                 fillColor: Colors.grey[50],
               ),
-              maxLines: 4,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter description';
-                }
-                return null;
-              },
+              validator: (value) =>
+                  value == null || value.trim().isEmpty ? 'Please enter description' : null,
             ),
+
             const SizedBox(height: 32),
+
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
                     onPressed: widget.onBack,
                     style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: primaryColor),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: const BorderSide(
-                        color: Color.fromARGB(255, 11, 113, 197),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Back',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color.fromARGB(255, 11, 113, 197),
+                        color: primaryColor,
                       ),
                     ),
                   ),
@@ -209,25 +197,19 @@ class _Step2DetailsState extends State<Step2Details> {
                   child: ElevatedButton(
                     onPressed: _saveAndNext,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 11, 113, 197),
+                      backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 2,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: const Text(
                       'Next: Add Transportation',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
               ],
-            ),
+            )
           ],
         ),
       ),
