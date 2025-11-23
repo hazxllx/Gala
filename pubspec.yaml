@@ -24,6 +24,8 @@ dependencies:
   firebase_storage: ^11.6.6
   cached_network_image: ^3.3.1
   path: ^1.9.1
+  webview_flutter: ^4.7.0
+  webview_flutter_android: ^3.16.0
 
 
 dev_dependencies:
@@ -100,6 +102,7 @@ flutter:
     - assets/images/mm.png
     - assets/images/blatte.png
     - assets/images/mb.png
+    - assets/aws_map.html
 
   fonts:
     - family: Inter

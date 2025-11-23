@@ -770,6 +770,30 @@
       "languageVersion": "3.3"
     },
     {
+      "name": "webview_flutter",
+      "rootUri": "file:///C:/Users/ebitu/AppData/Local/Pub/Cache/hosted/pub.dev/webview_flutter-4.9.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "webview_flutter_android",
+      "rootUri": "file:///C:/Users/ebitu/AppData/Local/Pub/Cache/hosted/pub.dev/webview_flutter_android-3.16.9",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "webview_flutter_platform_interface",
+      "rootUri": "file:///C:/Users/ebitu/AppData/Local/Pub/Cache/hosted/pub.dev/webview_flutter_platform_interface-2.14.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "webview_flutter_wkwebview",
+      "rootUri": "file:///C:/Users/ebitu/AppData/Local/Pub/Cache/hosted/pub.dev/webview_flutter_wkwebview-3.23.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
       "name": "wkt_parser",
       "rootUri": "file:///C:/Users/ebitu/AppData/Local/Pub/Cache/hosted/pub.dev/wkt_parser-2.0.0",
       "packageUri": "lib/",

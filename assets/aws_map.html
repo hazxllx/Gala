@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>AWS Vector Map</title>
+    <link href="https://unpkg.com/maplibre-gl@3.0.0/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/maplibre-gl@3.0.0/dist/maplibre-gl.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        .maplibregl-ctrl-bottom-left { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script>
+    // --- CONFIGURATION ---
+    const REGION = 'ap-southeast-1'; 
+    const MAP_NAME = 'MyNavigationApp'; 
+    
+    // YOUR FIXED API KEY
+    const API_KEY = 'v1.public.eyJqdGkiOiJmNjYzMGVlYi0xNzA2LTQxNDItYWQyYy1jYzMzNTc0NGM0ZmIifQg38P6cE6L4sb71GcGuteb40sqtqQlariMJDviQkWwltWUwfUEc8rSPmUo3vtOHGEL0U0z9vpQBeVbdNfZZ886jGXhNY9Kc6xdNykSCuqleZ2gVOgb6YxLay0F9wTr2d9Uzv5wawpQEfhucGX8y9trnEAm68wSvCorCGAFlPMOsW2MAzEEMMsKpFMZ6Cf3rTO_v-_YHLniGzuWRiID0tY_d2pJBo9egY6QeYFNI-srp2gMRlXoqzHxbBoCNVDSxwSMH7oEgAIvEso8-Cb3iQ-puWGftX8-kQ3uoEUkHXPiTlGksY72Hi9fkUkC20KeOvCX-RZ9RL2PIb_xjSEn89Ec.MzRjYzZmZGUtZmY3NC00NDZiLWJiMTktNTc4YjUxYTFlOGZi';
+
+    // Markers
+    let map;
+    let startMarker = new maplibregl.Marker({ color: "#4CAF50" }); 
+    let destMarker = new maplibregl.Marker({ color: "#F44336" }); 
+
+    // --- 1. FETCH & PATCH STYLE ---
+    const styleUrl = `https://maps.geo.${REGION}.amazonaws.com/maps/v0/maps/${MAP_NAME}/style-descriptor?key=${API_KEY}`;
+
+    fetch(styleUrl)
+        .then(response => {
+            if (!response.ok) {
+                console.error(`Map Load Error: HTTP ${response.status}`);
+                throw new Error("HTTP " + response.status);
+            }
+            return response.text();
+        })
+        .then(styleText => {
+            // FIX: Patch Esri style syntax error
+            const fixedStyleText = styleText
+                .replace(/" rgba/g, '"rgba')
+                .replace(/" hsla/g, '"hsla');
+
+            initializeMap(JSON.parse(fixedStyleText));
+        })
+        .catch(error => console.error("Map Init Error:", error));
+
+    function initializeMap(styleJson) {
+        map = new maplibregl.Map({
+            container: 'map',
+            style: styleJson, 
+            center: [123.1948, 13.6218], // Naga City
+            zoom: 15,
+            attributionControl: false,
+            
+            // --- RENDERING OPTIMIZATIONS (Prevents BAD ALLOC crashes) ---
+            pitchWithRotate: false, // Disable 3D tilt
+            dragRotate: false,      // Disable rotation
+            antialias: false,       // Disable edge smoothing (Big memory saver)
+            fadeDuration: 0,        // Disable tile fading (Faster rendering)
+            // Cap pixel ratio to 2.0 to prevent high-DPI screens from using too much memory
+            pixelRatio: Math.min(window.devicePixelRatio, 2) 
+        });
+
+
+        map.on('load', function () {
+            map.addSource('route', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'Feature',
+                    'properties': {},
+                    'geometry': { 'type': 'LineString', 'coordinates': [] }
+                }
+            });
+
+            map.addLayer({
+                'id': 'route',
+                'type': 'line',
+                'source': 'route',
+                'layout': { 'line-join': 'round', 'line-cap': 'round' },
+                'paint': { 'line-color': '#3B82F6', 'line-width': 6, 'line-opacity': 0.8 }
+            });
+        });
+    }
+
+    // --- DART FUNCTIONS ---
+
+    function updateStartLocation(lat, lng) {
+        if (!map) return;
+        startMarker.setLngLat([lng, lat]).addTo(map);
+        if (!destMarker.getElement().parentElement) {
+            map.flyTo({ center: [lng, lat], zoom: 15 });
+        }
+    }
+
+    function updateDestination(lat, lng) {
+        if (!map) return;
+        destMarker.setLngLat([lng, lat]).addTo(map);
+    }
+
+    function drawRoute(coordinates) {
+        if (!map) return;
+        const geojson = {
+            'type': 'Feature',
+            'properties': {},
+            'geometry': { 'type': 'LineString', 'coordinates': coordinates }
+        };
+        
+        if (map.getSource('route')) {
+            map.getSource('route').setData(geojson);
+        }
+
+        const bounds = coordinates.reduce(function (bounds, coord) {
+            return bounds.extend(coord);
+        }, new maplibregl.LngLatBounds(coordinates[0], coordinates[0]));
+
+        map.fitBounds(bounds, { padding: 50 });
+    }
+
+    function clearRoute() {
+        if (!map) return;
+        destMarker.remove();
+        if (map.getSource('route')) {
+            map.getSource('route').setData({
+                'type': 'Feature',
+                'geometry': { 'type': 'LineString', 'coordinates': [] }
+            });
+        }
+    }
+</script>
+
+</body>
+</html>

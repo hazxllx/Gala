@@ -452,7 +452,7 @@ class CategoryCard extends StatelessWidget {
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   return const Icon(
-                    Icons.image_not_supported, // A placeholder icon
+                    Icons.image_not_supported,
                     size: 50,
                     color: Colors.grey,
                   );
