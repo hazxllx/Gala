@@ -1,3 +1,7 @@
+/// FULL UPDATED BLUISH RESORT PAGE WITH PMAQ-STYLE OPERATING HOURS
+/// (Operating Hours moved under "About")
+// ------------------------------------------------------------
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,15 +19,15 @@ class _BluishResortPageState extends State<BluishResortPage> {
 
   static const String kResortTitle = 'Bluish Resort';
   static const String kAddress = 'Zone 5, Tagbong Pili, Camarines Sur 4418';
-  
-  // All Bluish Resort Images
+
   static const List<String> kGalleryImages = [
     'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/pili_resorts/bluish/bluish3.jpg',
     'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/pili_resorts/bluish/bluish2.jpg',
     'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/pili_resorts/bluish/bluish1.jpg',
   ];
 
-  static const String kImage = 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/pili_resorts/bluish/bluish3.jpg';
+  static const String kImage =
+      'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/pili_resorts/bluish/bluish3.jpg';
 
   @override
   void initState() {
@@ -77,7 +81,7 @@ class _BluishResortPageState extends State<BluishResortPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Image Carousel
+          // ---------------- IMAGE CAROUSEL ----------------
           Positioned(
             top: -70,
             left: 0,
@@ -87,7 +91,6 @@ class _BluishResortPageState extends State<BluishResortPage> {
               width: double.infinity,
               child: Stack(
                 children: [
-                  // Image display
                   PageView.builder(
                     onPageChanged: (index) {
                       setState(() => _currentImageIndex = index);
@@ -108,7 +111,6 @@ class _BluishResortPageState extends State<BluishResortPage> {
                       );
                     },
                   ),
-                  // Dot indicators
                   Positioned(
                     bottom: 16,
                     left: 0,
@@ -136,7 +138,7 @@ class _BluishResortPageState extends State<BluishResortPage> {
             ),
           ),
 
-          // Bottom sheet content
+          // ---------------- BOTTOM SHEET CONTENT ----------------
           Positioned(
             top: 360,
             left: 0,
@@ -155,6 +157,7 @@ class _BluishResortPageState extends State<BluishResortPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ABOUT
                     const Text(
                       'About',
                       style: TextStyle(
@@ -169,13 +172,30 @@ class _BluishResortPageState extends State<BluishResortPage> {
                       'Create your best memories at Bluish Resort! Featuring a cafe, event venue, cottages, and rooms, this destination offers the perfect setting for relaxation and celebrations. For bookings and reservations, contact 09690260560.',
                       style: TextStyle(
                         fontFamily: 'Inter',
-                        fontWeight: FontWeight.normal,
                         fontSize: 12.8,
                         color: Colors.black87,
                         height: 1.5,
                       ),
                     ),
                     const SizedBox(height: 24),
+
+                    // -------------------------------------------------
+                    //        NEW BUSINESS HOURS TITLE + CARD
+                    // -------------------------------------------------
+                    const Text(
+                      'Business Hours',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildOperatingHoursBluish(),
+                    const SizedBox(height: 30),
+
+                    // TITLE: Entrance Rates
                     const Text(
                       'Entrance Rates',
                       style: TextStyle(
@@ -187,36 +207,20 @@ class _BluishResortPageState extends State<BluishResortPage> {
                     ),
                     const SizedBox(height: 18),
                     _buildEntranceRates(),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Business Hours',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    _buildBusinessHoursShort(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 30),
 
-                    // Actions
+                    // OPTIONS
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/location.png',
                       'Go to Location and More Details',
-                      () {
-                        // TODO: add maps/deeplink here
-                      },
+                      () {},
                     ),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/menu.png',
                       "View Bluish Resort's Amenities",
-                      () {
-                        // TODO: link to amenities if available
-                      },
+                      () {},
                     ),
                     _buildOptionTileWithArrow(
                       context,
@@ -230,7 +234,7 @@ class _BluishResortPageState extends State<BluishResortPage> {
             ),
           ),
 
-          // Title + address over the image
+          // ---------------- TITLE ON IMAGE ----------------
           Positioned(
             top: 260,
             left: 32,
@@ -242,9 +246,9 @@ class _BluishResortPageState extends State<BluishResortPage> {
                   kResortTitle,
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    color: Colors.white,
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
                 SizedBox(height: 6),
@@ -271,7 +275,7 @@ class _BluishResortPageState extends State<BluishResortPage> {
             ),
           ),
 
-          // Back + Favorite
+          // ---------------- BACK & FAVORITE ----------------
           Positioned(
             top: 60,
             left: 20,
@@ -301,7 +305,83 @@ class _BluishResortPageState extends State<BluishResortPage> {
     );
   }
 
-  /// Entrance rates for Pool 1 & Pool 2
+  // ------------------------------------------------------------------
+  // NEW OPERATING HOURS (MATCHING PMAQ DESIGN)
+  // ------------------------------------------------------------------
+  Widget _buildOperatingHoursBluish() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE5E9F2), width: 1),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        children: [
+          // BLUE TOP BAR
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1556B1),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(18),
+                topRight: Radius.circular(18),
+              ),
+            ),
+            child: const Center(
+              child: Text(
+                'Open',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          // WHITE CONTENT
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(18),
+                bottomRight: Radius.circular(18),
+              ),
+            ),
+            child: Column(
+              children: const [
+                Text(
+                  'Open 24/7',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 21,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0B1A2E),
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Everyday',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------------
+  // ENTRANCE RATES
+  // ------------------------------------------------------------------
   Widget _buildEntranceRates() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
@@ -313,7 +393,6 @@ class _BluishResortPageState extends State<BluishResortPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title
           Row(
             children: const [
               Icon(Icons.pool, size: 20, color: Color(0xFF1556B1)),
@@ -330,13 +409,10 @@ class _BluishResortPageState extends State<BluishResortPage> {
             ],
           ),
           const SizedBox(height: 16),
-          // Day rate
           _buildRateRow('Daytime (7:00 AM - 5:00 PM)', '₱100/head'),
           const SizedBox(height: 12),
-          // Night rate
           _buildRateRow('Night time (6:00 PM - 5:00 AM)', '₱150/head'),
           const SizedBox(height: 16),
-          // Note
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -345,7 +421,7 @@ class _BluishResortPageState extends State<BluishResortPage> {
             ),
             child: Row(
               children: const [
-                Icon(Icons.info_outline, 
+                Icon(Icons.info_outline,
                     size: 18, color: Color(0xFF1556B1)),
                 SizedBox(width: 8),
                 Expanded(
@@ -395,63 +471,9 @@ class _BluishResortPageState extends State<BluishResortPage> {
     );
   }
 
-  /// Business hours - always open
-  Widget _buildBusinessHoursShort() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FC),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E9F2), width: 1),
-      ),
-      child: Column(
-        children: [
-          // Open badge
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1556B1),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 22, vertical: 4),
-                child: const Text(
-                  'Open now',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Always open line
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.access_time, size: 18, color: Color(0xFF1556B1)),
-              SizedBox(width: 6),
-              Text(
-                'Open 24/7 · Every Day',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0B1A2E),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
+  // ------------------------------------------------------------------
+  // OPTION TILE
+  // ------------------------------------------------------------------
   Widget _buildOptionTileWithArrow(
     BuildContext context,
     String imagePath,
@@ -478,7 +500,7 @@ class _BluishResortPageState extends State<BluishResortPage> {
           ),
           child: Row(
             children: [
-              Image.asset(imagePath, width: 28, height: 28, fit: BoxFit.contain),
+              Image.asset(imagePath, width: 28, height: 28),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
@@ -491,7 +513,8 @@ class _BluishResortPageState extends State<BluishResortPage> {
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.black45, size: 28),
+              const Icon(Icons.chevron_right,
+                  color: Colors.black45, size: 28),
             ],
           ),
         ),
@@ -499,6 +522,9 @@ class _BluishResortPageState extends State<BluishResortPage> {
     );
   }
 
+  // ------------------------------------------------------------------
+  // RATING DIALOG
+  // ------------------------------------------------------------------
   void _showRatingDialog(BuildContext context) {
     int selected = 0;
     bool isSubmitting = false;
@@ -510,9 +536,8 @@ class _BluishResortPageState extends State<BluishResortPage> {
         return StatefulBuilder(
           builder: (context, setState) => Dialog(
             backgroundColor: const Color(0xFFF8F8FF),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             child: Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
@@ -531,8 +556,9 @@ class _BluishResortPageState extends State<BluishResortPage> {
                   const SizedBox(height: 22),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (i) {
-                      return IconButton(
+                    children: List.generate(
+                      5,
+                      (i) => IconButton(
                         icon: Icon(
                           i < selected ? Icons.star : Icons.star_border,
                           color: i < selected
@@ -542,8 +568,8 @@ class _BluishResortPageState extends State<BluishResortPage> {
                         ),
                         splashRadius: 24,
                         onPressed: () => setState(() => selected = i + 1),
-                      );
-                    }),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   Row(
@@ -578,20 +604,18 @@ class _BluishResortPageState extends State<BluishResortPage> {
                                         .doc(kResortTitle)
                                         .collection('ratings')
                                         .doc(user.uid);
-                                    await ratingRef
-                                        .set({'rating': selected});
-                                    if (dialogContext.mounted) {
-                                      Navigator.pop(dialogContext);
-                                      ScaffoldMessenger.of(dialogContext)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                              'Thanks for rating Bluish Resort!'),
-                                          backgroundColor:
-                                              Color(0xFF0B55A0),
-                                        ),
-                                      );
-                                    }
+                                    await ratingRef.set({'rating': selected});
+                                  }
+                                  if (dialogContext.mounted) {
+                                    Navigator.pop(dialogContext);
+                                    ScaffoldMessenger.of(dialogContext)
+                                        .showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Thanks for rating Bluish Resort!'),
+                                        backgroundColor: Color(0xFF0B55A0),
+                                      ),
+                                    );
                                   }
                                   if (context.mounted) {
                                     setState(() => isSubmitting = false);
@@ -599,13 +623,12 @@ class _BluishResortPageState extends State<BluishResortPage> {
                                 }
                               : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: (selected > 0)
+                            backgroundColor: selected > 0
                                 ? const Color(0xFF0B55A0)
                                 : Colors.grey[300],
-                            foregroundColor: (selected > 0)
+                            foregroundColor: selected > 0
                                 ? Colors.white
                                 : Colors.grey,
-                            shadowColor: Colors.transparent,
                             elevation: 0,
                             padding:
                                 const EdgeInsets.symmetric(vertical: 14),
@@ -627,7 +650,6 @@ class _BluishResortPageState extends State<BluishResortPage> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.2,
                                   ),
                                 ),
                         ),

@@ -47,8 +47,10 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
 
     if (!isFavorited) {
       await favoritesDoc.set({
-        'imagePath': 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/harina_cafe.jpeg',
-        'subtitle': 'Narra St. Mariano Village, Magsaysay Ave., Naga City, Camarines Sur',
+        'imagePath':
+            'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/harina_cafe.jpeg',
+        'subtitle':
+            'Narra St. Mariano Village, Magsaysay Ave., Naga City, Camarines Sur',
         'type': 'Cafe',
         'addedAt': FieldValue.serverTimestamp(),
       });
@@ -67,6 +69,7 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
+          // Hero image
           Positioned(
             top: -70,
             left: 0,
@@ -76,7 +79,8 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
               width: double.infinity,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: NetworkImage('https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/harina_cafe.jpeg'),
+                  image: NetworkImage(
+                      'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/harina_cafe.jpeg'),
                   fit: BoxFit.cover,
                   colorFilter: ColorFilter.mode(
                     Colors.black.withValues(alpha: 0.22),
@@ -86,6 +90,8 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
               ),
             ),
           ),
+
+          // Bottom sheet
           Positioned(
             top: 360,
             left: 0,
@@ -118,13 +124,14 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
                       "Harina Cafe is a pastry-focused cafe that offers a wide range of food and beverages. From coffees to milkbase; from pastas to pastries. The soothing ambience of the cafe is something to see for yourself.",
                       style: TextStyle(
                         fontFamily: 'Inter',
-                        fontWeight: FontWeight.normal,
                         fontSize: 12.3,
                         color: Colors.black87,
                         height: 1.5,
                       ),
                     ),
                     const SizedBox(height: 24),
+
+                    // 👇 NEW PMAQ-STYLE HOURS
                     const Text(
                       'Business Hours',
                       style: TextStyle(
@@ -137,33 +144,32 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
                     const SizedBox(height: 18),
                     _buildBusinessHours(),
                     const SizedBox(height: 24),
+
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/location.png',
                       'Go to Location and More Details',
-                      () {
-                      },
+                      () {},
                     ),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/menu.png',
                       "View Harina Cafe's Menu",
-                      () {
-                      },
+                      () {},
                     ),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/star_filled.png',
                       'Give it a rate',
-                      () {
-                        _showRatingDialog(context);
-                      },
+                      () => _showRatingDialog(context),
                     ),
                   ],
                 ),
               ),
             ),
           ),
+
+          // Title overlay
           const Positioned(
             top: 260,
             left: 32,
@@ -203,23 +209,21 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
               ],
             ),
           ),
+
+          // Back & Favorite
           Positioned(
             top: 60,
             left: 20,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context),
             ),
           ),
           Positioned(
             top: 60,
             right: 24,
             child: ElevatedButton.icon(
-              onPressed: () async {
-                await _handleFavoriteToggle();
-              },
+              onPressed: _handleFavoriteToggle,
               style: ElevatedButton.styleFrom(
                 backgroundColor: isFavorited
                     ? const Color.fromARGB(255, 13, 71, 118)
@@ -238,45 +242,52 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
     );
   }
 
+  // ⭐ NEW — PMAQ-FULL-WIDTH OPEN BAR
   Widget _buildBusinessHours() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FC),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFE5E9F2), width: 1),
       ),
+
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1556B1),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 4),
-                child: const Text(
-                  "Open",
-                  style: TextStyle(
-                    fontFamily: "Inter",
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
+          // FULL-WIDTH BLUE BAR — SAME AS PMAQ
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1556B1),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(18),
+                topRight: Radius.circular(18),
+              ),
+            ),
+            child: const Center(
+              child: Text(
+                "Open",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
                 ),
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildHoursColumn("11AM-11PM", "Monday"),
-              _buildHoursColumn("10AM - 11PM", "Tuesday - Saturday"),
-              _buildHoursColumn("9AM - 11PM", "Sunday"),
-            ],
+
+          // WHITE CONTENT
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildHoursColumn("11AM - 11PM", "Monday"),
+                _buildHoursColumn("10AM - 11PM", "Tue – Sat"),
+                _buildHoursColumn("9AM - 11PM", "Sunday"),
+              ],
+            ),
           ),
         ],
       ),
@@ -378,7 +389,8 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
               borderRadius: BorderRadius.circular(24),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -392,6 +404,7 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
                     ),
                   ),
                   const SizedBox(height: 22),
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (i) {
@@ -403,14 +416,13 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
                               : Colors.amber[400],
                           size: 36,
                         ),
-                        splashRadius: 24,
-                        onPressed: () => setState(() {
-                          selected = i + 1;
-                        }),
+                        onPressed: () => setState(() => selected = i + 1),
                       );
                     }),
                   ),
+
                   const SizedBox(height: 24),
+
                   Row(
                     children: [
                       Expanded(
@@ -424,7 +436,6 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
                               color: Color(0xFF0B55A0),
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              letterSpacing: 0.2,
                             ),
                           ),
                         ),
@@ -435,37 +446,42 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
                           onPressed: (selected > 0 && !isSubmitting)
                               ? () async {
                                   setState(() => isSubmitting = true);
-                                  final user = FirebaseAuth.instance.currentUser;
+
+                                  final user =
+                                      FirebaseAuth.instance.currentUser;
                                   if (user != null) {
-                                    final ratingRef = FirebaseFirestore.instance
+                                    await FirebaseFirestore.instance
                                         .collection('cafes')
                                         .doc('Harina Cafe')
                                         .collection('ratings')
-                                        .doc(user.uid);
-                                    await ratingRef.set({'rating': selected});
-                                    if (dialogContext.mounted) {
-                                      Navigator.pop(dialogContext);
-                                      ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Thanks for rating Harina Cafe!'),
-                                          backgroundColor: Color(0xFF0B55A0),
-                                        ),
-                                      );
-                                    }
+                                        .doc(user.uid)
+                                        .set({'rating': selected});
                                   }
-                                  if (context.mounted) {
+
+                                  if (dialogContext.mounted) {
+                                    Navigator.pop(dialogContext);
+                                    ScaffoldMessenger.of(dialogContext)
+                                        .showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Thanks for rating Harina Cafe!'),
+                                        backgroundColor: Color(0xFF0B55A0),
+                                      ),
+                                    );
+                                  }
+
+                                  if (mounted) {
                                     setState(() => isSubmitting = false);
                                   }
                                 }
                               : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: (selected > 0)
+                            backgroundColor: selected > 0
                                 ? const Color(0xFF0B55A0)
                                 : Colors.grey[300],
-                            foregroundColor: (selected > 0)
+                            foregroundColor: selected > 0
                                 ? Colors.white
                                 : Colors.grey,
-                            shadowColor: Colors.transparent,
                             elevation: 0,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -473,20 +489,15 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
                             ),
                           ),
                           child: isSubmitting
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.2,
-                                  ),
+                              ? const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
                                 )
                               : const Text(
                                   'Submit',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.2,
                                   ),
                                 ),
                         ),

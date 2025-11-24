@@ -13,13 +13,17 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
   bool isFavorited = false;
   int _currentImageIndex = 0;
 
-  final List<String> galleryImages = [
+  static const String kResortTitle = 'PMAQ Ville Resort';
+  static const String kAddress =
+      'Zone 3, PROSAMAPI, Palestina Pili, Philippines';
+
+  static const List<String> kGalleryImages = [
     'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/pili_resorts/pmaq/pmaq1.jpg',
     'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/pili_resorts/pmaq/pmaq.jpg',
   ];
 
-  static const String kResortTitle = 'PMAQ Ville Resort';
-  static const String kAddress = 'Zone 3, PROSAMAPI, Palestina Pili, Philippines';
+  static const String kImage =
+      'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/pili_resorts/pmaq/pmaq1.jpg';
 
   @override
   void initState() {
@@ -27,32 +31,19 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
     _checkIfFavorited();
   }
 
-  void _checkIfFavorited() async {
+  Future<void> _checkIfFavorited() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      try {
-        final doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('favorites')
-            .doc(kResortTitle)
-            .get();
-        if (mounted) {
-          setState(() {
-            isFavorited = doc.exists;
-          });
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Unable to connect to server. Please check your internet and try again.'),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
-      }
-    }
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites')
+        .doc(kResortTitle)
+        .get();
+
+    if (!mounted) return;
+    setState(() => isFavorited = doc.exists);
   }
 
   Future<void> _handleFavoriteToggle() async {
@@ -65,30 +56,19 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
         .collection('favorites')
         .doc(kResortTitle);
 
-    try {
-      if (!isFavorited) {
-        await favoritesDoc.set({
-          'imagePath': galleryImages[0],
-          'subtitle': kAddress,
-          'type': 'Resort',
-          'addedAt': FieldValue.serverTimestamp(),
-        });
-      } else {
-        await favoritesDoc.delete();
-      }
-      setState(() {
-        isFavorited = !isFavorited;
+    if (!isFavorited) {
+      await favoritesDoc.set({
+        'imagePath': kImage,
+        'subtitle': kAddress,
+        'type': 'Resort',
+        'addedAt': FieldValue.serverTimestamp(),
       });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unable to connect to server. Please check your internet and try again.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
+    } else {
+      await favoritesDoc.delete();
     }
+
+    if (!mounted) return;
+    setState(() => isFavorited = !isFavorited);
   }
 
   @override
@@ -97,7 +77,7 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Image Carousel
+          // IMAGE CAROUSEL
           Positioned(
             top: -70,
             left: 0,
@@ -111,12 +91,12 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                     onPageChanged: (index) {
                       setState(() => _currentImageIndex = index);
                     },
-                    itemCount: galleryImages.length,
+                    itemCount: kGalleryImages.length,
                     itemBuilder: (context, index) {
                       return Container(
                         decoration: BoxDecoration(
                           image: DecorationImage(
-                            image: NetworkImage(galleryImages[index]),
+                            image: NetworkImage(kGalleryImages[index]),
                             fit: BoxFit.cover,
                             colorFilter: ColorFilter.mode(
                               Colors.black.withOpacity(0.22),
@@ -127,15 +107,16 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                       );
                     },
                   ),
-                  // Dot indicators
+
+                  // DOTS
                   Positioned(
-                    bottom: 18,
+                    bottom: 16,
                     left: 0,
                     right: 0,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
-                        galleryImages.length,
+                        kGalleryImages.length,
                         (index) => Container(
                           margin: const EdgeInsets.symmetric(horizontal: 6),
                           width: _currentImageIndex == index ? 28 : 8,
@@ -154,6 +135,8 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
               ),
             ),
           ),
+
+          // CONTENT BODY
           Positioned(
             top: 360,
             left: 0,
@@ -172,6 +155,7 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ABOUT
                     const Text(
                       'About',
                       style: TextStyle(
@@ -183,50 +167,51 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      "Unwind and refresh your spirit at PMAQ Ville Resort—a tranquil haven where relaxation takes center stage. It’s the perfect spot to escape daily stress, calm your mind, and experience true peace.",
+                      "Unwind and refresh your spirit at PMAQ Ville Resort—a tranquil haven where relaxation takes center stage. It’s the perfect spot to escape daily stress and experience true peace.",
                       style: TextStyle(
                         fontFamily: 'Inter',
-                        fontWeight: FontWeight.normal,
-                        fontSize: 12.3,
+                        fontSize: 12.5,
                         color: Colors.black87,
                         height: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Amenities Available',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    _buildAmenities(),
-                    const SizedBox(height: 24),
+
+                    const SizedBox(height: 28),
+
+                    // ⭐ NEW OPERATING HOURS CARD (OPTION A)
+                    _buildOperatingHoursCard(),
+                    const SizedBox(height: 28),
+
+                    // ENTRANCE RATES
+                    _buildEntranceRatesPmaq(),
+                    const SizedBox(height: 40),
+
+                    // ACTION BUTTONS
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/location.png',
                       'Go to Location and More Details',
-                      () {
-                        // TODO: Add maps/support if needed
-                      },
+                      () {},
+                    ),
+                    _buildOptionTileWithArrow(
+                      context,
+                      'assets/icons/menu.png',
+                      "View PMAQ's Amenities",
+                      () {},
                     ),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/star_filled.png',
                       'Give it a rate',
-                      () {
-                        _showRatingDialog(context);
-                      },
+                      () => _showRatingDialog(context),
                     ),
                   ],
                 ),
               ),
             ),
           ),
-          // Title + address
+
+          // TITLE + ADDRESS
           Positioned(
             top: 260,
             left: 32,
@@ -266,31 +251,28 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
               ],
             ),
           ),
-          // Back + Favorite
+
+          // BACK BUTTON
           Positioned(
             top: 60,
             left: 20,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context),
             ),
           ),
+
+          // FAVORITE BUTTON
           Positioned(
             top: 60,
             right: 24,
             child: ElevatedButton.icon(
-              onPressed: () async {
-                await _handleFavoriteToggle();
-              },
+              onPressed: _handleFavoriteToggle,
               style: ElevatedButton.styleFrom(
-                backgroundColor: isFavorited
-                    ? const Color.fromARGB(255, 13, 71, 118)
-                    : Colors.white,
-                foregroundColor: isFavorited
-                    ? Colors.white
-                    : const Color.fromARGB(255, 7, 90, 158),
+                backgroundColor:
+                    isFavorited ? const Color(0xFF0D4776) : Colors.white,
+                foregroundColor:
+                    isFavorited ? Colors.white : const Color(0xFF075A9E),
                 elevation: 4,
               ),
               icon: Icon(isFavorited ? Icons.check : Icons.favorite_border),
@@ -302,32 +284,182 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
     );
   }
 
-  Widget _buildAmenities() {
+  // ⭐⭐⭐ NEW — OPERATING HOURS CARD
+  Widget _buildOperatingHoursCard() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Business Hours",
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            color: const Color(0xFFF7F8FC),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // BLUE BAR
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0B55A0),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                ),
+                child: const Center(
+                  child: Text(
+                    "Open",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ),
+
+              // WHITE PART
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                child: Column(
+                  children: const [
+                    Text(
+                      "7:00 AM – 6:00 PM",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFF0B1A2E),
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      "Everyday",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ------------------- ENTRANCE RATES -------------------
+  Widget _buildEntranceRatesPmaq() {
     return Container(
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: const Color(0xFFF7F8FC),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E9F2), width: 1),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Color(0xFFE5E9F2), width: 1),
       ),
-      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
-            '• Swimming Pool\n• Cottages & Picnic Areas\n• Event Venue\n• Room Accommodations\n• Free Parking\n• Snack Bar\n• Spacious Grounds\n• Relaxing Ambience\n',
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.pool, size: 20, color: Color(0xFF1556B1)),
+              SizedBox(width: 8),
+              Text(
+                'Entrance Rates',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF0B1A2E),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          const Text(
+            'Daytime 7:00 AM - 5:00 PM',
             style: TextStyle(
-              fontSize: 13.5,
-              fontFamily: 'Inter',
-              color: Colors.black87,
-              height: 1.49,
-              fontWeight: FontWeight.w600,
+              color: Color(0xFF1556B1),
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
             ),
           ),
+          const SizedBox(height: 10),
+          _buildRateRow('Adult (13yrs old above)', '₱250'),
+          const SizedBox(height: 8),
+          _buildRateRow('Kids (6–12yrs old)', '₱180'),
+          const SizedBox(height: 8),
+          _buildRateRow('Kids (1–5yrs old)', 'FREE'),
+
+          const SizedBox(height: 25),
+
+          const Text(
+            'Night Time 6:00 PM - 7:00 AM',
+            style: TextStyle(
+              color: Color(0xFF1556B1),
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _buildRateRow('Adult (13yrs old above)', '₱250'),
+          const SizedBox(height: 8),
+          _buildRateRow('Kids (6–12yrs old)', '₱180'),
+          const SizedBox(height: 8),
+          _buildRateRow('Kids (1–5yrs old)', 'FREE'),
         ],
       ),
     );
   }
 
+  // ------------------- RATE ROW -------------------
+  Widget _buildRateRow(String name, String price) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            name,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF4A5568),
+            ),
+          ),
+        ),
+        Text(
+          price,
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1556B1),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ------------------- ACTION TILE -------------------
   Widget _buildOptionTileWithArrow(
     BuildContext context,
     String imagePath,
@@ -380,6 +512,7 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
     );
   }
 
+  // ------------------- RATING DIALOG -------------------
   void _showRatingDialog(BuildContext context) {
     int selected = 0;
     bool isSubmitting = false;
@@ -395,7 +528,8 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
               borderRadius: BorderRadius.circular(24),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -409,6 +543,7 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                     ),
                   ),
                   const SizedBox(height: 22),
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (i) {
@@ -417,17 +552,18 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                           i < selected ? Icons.star : Icons.star_border,
                           color: i < selected
                               ? const Color(0xFF0B55A0)
-                              : Colors.amber[400],
+                              : Colors.amber,
                           size: 36,
                         ),
                         splashRadius: 24,
-                        onPressed: () => setState(() {
-                          selected = i + 1;
-                        }),
+                        onPressed: () =>
+                            setState(() => selected = i + 1),
                       );
                     }),
                   ),
+
                   const SizedBox(height: 24),
+
                   Row(
                     children: [
                       Expanded(
@@ -447,45 +583,45 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                         ),
                       ),
                       const SizedBox(width: 8),
+
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: (selected > 0 && !isSubmitting)
-                              ? () async {
-                                  setState(() => isSubmitting = true);
-                                  final user = FirebaseAuth.instance.currentUser;
-                                  try {
-                                    if (user != null) {
-                                      final ratingRef = FirebaseFirestore.instance
-                                          .collection('resorts')
-                                          .doc(kResortTitle)
-                                          .collection('ratings')
-                                          .doc(user.uid);
-                                      await ratingRef.set({'rating': selected});
-                                      if (dialogContext.mounted) {
-                                        Navigator.pop(dialogContext);
-                                        ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Thanks for rating $kResortTitle!'),
-                                            backgroundColor: const Color(0xFF0B55A0),
-                                          ),
-                                        );
+                          onPressed:
+                              (selected > 0 && !isSubmitting)
+                                  ? () async {
+                                      setState(() => isSubmitting = true);
+                                      final user = FirebaseAuth
+                                          .instance.currentUser;
+                                      if (user != null) {
+                                        final ratingRef = FirebaseFirestore
+                                            .instance
+                                            .collection('resorts')
+                                            .doc(kResortTitle)
+                                            .collection('ratings')
+                                            .doc(user.uid);
+                                        await ratingRef
+                                            .set({'rating': selected});
+
+                                        if (dialogContext.mounted) {
+                                          Navigator.pop(dialogContext);
+                                          ScaffoldMessenger.of(dialogContext)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                  'Thanks for rating $kResortTitle!'),
+                                              backgroundColor:
+                                                  const Color(0xFF0B55A0),
+                                            ),
+                                          );
+                                        }
+                                      }
+
+                                      if (context.mounted) {
+                                        setState(
+                                            () => isSubmitting = false);
                                       }
                                     }
-                                  } catch (e) {
-                                    if (dialogContext.mounted) {
-                                      ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Unable to connect to server. Please try again later.'),
-                                          backgroundColor: Colors.redAccent,
-                                        ),
-                                      );
-                                    }
-                                  }
-                                  if (context.mounted) {
-                                    setState(() => isSubmitting = false);
-                                  }
-                                }
-                              : null,
+                                  : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: (selected > 0)
                                 ? const Color(0xFF0B55A0)
@@ -493,9 +629,9 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                             foregroundColor: (selected > 0)
                                 ? Colors.white
                                 : Colors.grey,
-                            shadowColor: Colors.transparent,
                             elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(18),
                             ),
@@ -514,7 +650,6 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.2,
                                   ),
                                 ),
                         ),
