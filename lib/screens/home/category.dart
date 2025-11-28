@@ -4,7 +4,7 @@ import 'package:my_project/screens/home/cafe.dart' as naga;
 import 'package:my_project/screens/home/pili_cafe/pili_cafe.dart' as pili;
 import 'package:my_project/screens/home/naga_bars.dart' as bars;
 import 'package:my_project/screens/home/pili_resorts.dart';
-import 'package:my_project/screens/home/naga_parks.dart'; // <-- Use ParksPage here!
+import 'package:my_project/screens/home/naga_parks.dart';
 import 'package:my_project/screens/home/header.dart';
 
 class CategoryScreen extends StatefulWidget {
@@ -49,7 +49,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
           }
         },
       },
-
       {
         "image": 'assets/beach.png',
         "name": "Resorts",
@@ -71,7 +70,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
           }
         },
       },
-
       {
         "image": 'assets/parks.png',
         "name": "Parks",
@@ -93,7 +91,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
           }
         },
       },
-
       {
         "image": 'assets/restaurant.png',
         "name": "Restaurants",
@@ -105,7 +102,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
           );
         },
       },
-
       {
         "image": 'assets/inuman.png',
         "name": "Bars",
@@ -145,10 +141,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
     setState(() {
       if (sortType == 'A-Z') {
         filteredCategories.sort((a, b) =>
-          a['name'].toString().toLowerCase().compareTo(b['name'].toString().toLowerCase()));
+            a['name'].toString().toLowerCase().compareTo(b['name'].toString().toLowerCase()));
       } else if (sortType == 'Z-A') {
         filteredCategories.sort((a, b) =>
-          b['name'].toString().toLowerCase().compareTo(a['name'].toString().toLowerCase()));
+            b['name'].toString().toLowerCase().compareTo(a['name'].toString().toLowerCase()));
       }
     });
   }
@@ -168,7 +164,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
         child: ListView(
           children: [
             const SizedBox(height: 20),
-            // search
+
+            // SEARCH BAR
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
@@ -217,6 +214,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 ],
               ),
             ),
+
             const SizedBox(height: 32),
 
             Text(
@@ -295,9 +293,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 ),
               ],
             ),
+
             const SizedBox(height: 16),
 
-            // categories row
+            // CATEGORY SCROLL ROW
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -318,10 +317,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                                 : const Color(0xFF2E7D32))
                                   : (isDarkMode ? const Color.fromARGB(255, 174, 151, 255)
                                                 : const Color.fromARGB(255, 44, 13, 98));
+
                   return Row(
                     children: [
                       CategoryCard(
-                        image: category['image'] as String,
+                        image: category['image'],
                         name: name,
                         onTap: () {
                           if (category.containsKey('onTap')) {
@@ -339,6 +339,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
             ),
 
             const SizedBox(height: 32),
+
             Text(
               "What do you want to do?",
               style: TextStyle(
@@ -347,13 +348,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 color: textColor,
               ),
             ),
+
             const SizedBox(height: 16),
-            const SizedBox(height: 8),
             ActionButton(icon: 'assets/nearby.png', label: "Find nearby places", isDarkMode: isDarkMode),
             const SizedBox(height: 12),
             ActionButton(icon: 'assets/directions.png', label: "Get directions", isDarkMode: isDarkMode),
             const SizedBox(height: 12),
             ActionButton(icon: 'assets/fare.png', label: "Check public transport & fare", isDarkMode: isDarkMode),
+
             const SizedBox(height: 40),
           ],
         ),
@@ -362,7 +364,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 }
 
-class CategoryCard extends StatelessWidget {
+
+/// CATEGORY CARD WITH SCALE + HOVER GLOW ✨
+class CategoryCard extends StatefulWidget {
   final String image;
   final String name;
   final VoidCallback onTap;
@@ -379,66 +383,90 @@ class CategoryCard extends StatelessWidget {
     required this.isDarkMode,
     required this.textColor,
     this.width = 155,
-    this.height = 170,
+    this.height = 173, // +3 size improvement
   });
 
   @override
+  State<CategoryCard> createState() => _CategoryCardState();
+}
+
+class _CategoryCardState extends State<CategoryCard> with SingleTickerProviderStateMixin {
+  double scale = 1.0;
+  bool hovering = false;
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: isDarkMode ? Colors.grey[900] : Colors.white,
-          border: Border.all(
-            color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
-            width: 1,
+    final glowColor = Colors.white.withOpacity(0.45); // SOFT WHITE GLOW (Choice A)
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => hovering = true),
+      onExit: (_) => setState(() => hovering = false),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => scale = 0.94),
+        onTapCancel: () => setState(() => scale = 1.0),
+        onTapUp: (_) {
+          setState(() => scale = 1.0);
+          Future.delayed(const Duration(milliseconds: 90), widget.onTap);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          transform: Matrix4.identity()..scale(scale),
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: widget.isDarkMode ? Colors.grey[900] : Colors.white,
+            border: Border.all(
+              color: widget.isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: hovering ? glowColor : Colors.black.withOpacity(0.08),
+                blurRadius: hovering ? 22 : 8,
+                offset: hovering ? const Offset(0, 0) : const Offset(0, 4),
+              ),
+            ],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              child: Image.asset(
-                image,
-                width: 125,
-                height: 125,
-                fit: BoxFit.contain,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                name,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: textColor,
-                  height: 1.2,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                child: Image.asset(
+                  widget.image,
+                  width: 128,  // +3 bigger
+                  height: 128, // +3 bigger
+                  fit: BoxFit.contain,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  widget.name,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: widget.textColor,
+                    height: 1.2,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
+
+/// ACTION BUTTON — unchanged
 class ActionButton extends StatelessWidget {
   final String icon;
   final String label;
@@ -499,3 +527,4 @@ class ActionButton extends StatelessWidget {
     );
   }
 }
+

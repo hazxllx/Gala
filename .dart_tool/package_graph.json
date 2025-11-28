@@ -251,7 +251,7 @@
     },
     {
       "name": "image",
-      "version": "4.5.4",
+      "version": "4.3.0",
       "dependencies": [
         "archive",
         "meta",
@@ -837,11 +837,10 @@
     },
     {
       "name": "archive",
-      "version": "4.0.7",
+      "version": "3.6.1",
       "dependencies": [
         "crypto",
-        "path",
-        "posix"
+        "path"
       ]
     },
     {
@@ -1077,15 +1076,6 @@
       "dependencies": [
         "collection",
         "meta"
-      ]
-    },
-    {
-      "name": "posix",
-      "version": "6.0.3",
-      "dependencies": [
-        "ffi",
-        "meta",
-        "path"
       ]
     },
     {

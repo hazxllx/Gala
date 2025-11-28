@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:my_project/screens/home/arcodiez/arco_diez.dart';
 import 'package:my_project/screens/home/harina/harina.dart';
+import 'package:my_project/screens/home/caramel/caramel_cafe_page.dart';
 import 'package:my_project/screens/favorites.dart' as fav;
 import 'package:my_project/screens/profile/profile_page.dart' as profile;
 import 'package:my_project/screens/settings/settings.dart';
@@ -22,41 +23,47 @@ class _CafePageState extends State<CafePage> {
   final TextEditingController _searchController = TextEditingController();
   int selectedIndex = 0;
 
-  List<CafeData> allCafes = [
-    CafeData(
-      imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_diez.jpeg',
-      title: 'Arco Diez Cafe',
-      subtitle: 'Pacol Rd, Naga City',
-    ),
-    CafeData(
-      imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/tct.jpg',
-      title: 'The Coffee Table',
-      subtitle: 'Magsaysay Ave, Naga City',
-    ),
-    CafeData(
-      imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/harina.jpeg',
-      title: 'Harina Cafe',
-      subtitle: 'Narra St, Naga City',
-    ),
-  ];
+List<CafeData> allCafes = [
+  CafeData(
+    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_diez.jpeg',
+    title: 'Arco Diez Cafe',
+    subtitle: 'Pacol Rd, Naga City',
+  ),
+  CafeData(
+    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/tct.jpg',
+    title: 'The Coffee Table',
+    subtitle: 'Magsaysay Ave, Naga City',
+  ),
+  CafeData(
+    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/harina.jpeg',
+    title: 'Harina Cafe',
+    subtitle: 'Narra St, Naga City',
+  ),
+  // ⭐ NEW — Caramel Cafe Added
+  CafeData(
+    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/caramel/caramel1.jpg',
+    title: 'Caramel Cafe',
+    subtitle: 'Diversion Road, Naga City',
+  ),
+];
 
-  List<CafeData> nearbyCafes = [
-    CafeData(
-      imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/beanleaf.png',
-      title: 'Beanleaf Coffee and Tea',
-      subtitle: '2F Grand Master Mall, Naga City',
-    ),
-    CafeData(
-      imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/bellissimo.png',
-      title: 'Bellissimo Boulangerie & Patisserie',
-      subtitle: '800, 461, Naga City',
-    ),
-    CafeData(
-      imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/garden_cafe.jpeg',
-      title: 'Starmark Cafe',
-      subtitle: 'Diaz St. cor Peñafrancia, Naga City',
-    ),
-  ];
+List<CafeData> nearbyCafes = [
+  CafeData(
+    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/beanleaf.png',
+    title: 'Beanleaf Coffee and Tea',
+    subtitle: '2F Grand Master Mall, Naga City',
+  ),
+  CafeData(
+    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/bellissimo.png',
+    title: 'Bellissimo Boulangerie & Patisserie',
+    subtitle: '800, 461, Naga City',
+  ),
+  CafeData(
+    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/garden_cafe.jpeg',
+    title: 'Starmark Cafe',
+    subtitle: 'Diaz St. cor Peñafrancia, Naga City',
+  ),
+];
 
   bool get isNaga => widget.locationName.toLowerCase().contains('naga');
   bool get isSearching => _searchController.text.isNotEmpty;
@@ -136,44 +143,45 @@ class _CafePageState extends State<CafePage> {
     }
   }
 
-  Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
-    final isFavorite = favoriteCafeTitles.contains(cafe.title);
+Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
+  final isFavorite = favoriteCafeTitles.contains(cafe.title);
 
-    return GestureDetector(
-      onTap: () {
-        if (cafe.title == 'Arco Diez Cafe') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ArcoDiezPage()),
-          );
-        } else if (cafe.title == 'Harina Cafe') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const HarinaCafePage()),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No details page yet for ${cafe.title}')),
-          );
-        }
-      },
-      child: CafeCard(
-        imagePath: cafe.imagePath,
-        title: cafe.title,
-        subtitle: cafe.subtitle,
-        isFavorite: isFavorite,
-        onFavoriteToggle: () => _toggleFavorite(cafe, favoriteCafeTitles),
-        user: user,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
+  return GestureDetector(
+    onTap: () {
+      if (cafe.title == 'Arco Diez Cafe') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ArcoDiezPage()),
+        );
+      } 
+      else if (cafe.title == 'Harina Cafe') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const HarinaCafePage()),
+        );
+      }
+      else if (cafe.title == 'Caramel Cafe') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CaramelCafePage()),
+        );
+      }
+      else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No details page yet for ${cafe.title}')),
+        );
+      }
+    },
+    child: CafeCard(
+      imagePath: cafe.imagePath,
+      title: cafe.title,
+      subtitle: cafe.subtitle,
+      isFavorite: isFavorite,
+      onFavoriteToggle: () => _toggleFavorite(cafe, favoriteCafeTitles),
+      user: user,
+    ),
+  );
+}
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
