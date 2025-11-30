@@ -448,91 +448,118 @@ class _NearbyScreenState extends State<NearbyScreen> with TickerProviderStateMix
             child: SlideTransition(
               position: Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero)
                   .animate(CurvedAnimation(parent: _slideInController, curve: Curves.elasticOut)),
-              child: _buildGlassCard(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Categories
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: Row(
-                        children: _categories.map((cat) {
-                          final isSelected = _selectedCategory == cat;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              child: ChoiceChip(
-                                label: Text(cat),
-                                selected: isSelected,
-                                onSelected: (val) {
-                                  if (val) {
-                                    setState(() {
-                                      _selectedCategory = cat;
-                                      _closeCard();
-                                    });
-                                    _searchNearbyPlaces();
-                                  }
-                                },
-                                selectedColor: const Color(0xFF041D66),
-                                backgroundColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                  side: BorderSide(
-                                    color: isSelected ? Colors.transparent : Colors.grey.withOpacity(0.3),
-                                  ),
-                                ),
-                                labelStyle: TextStyle(
-                                  color: isSelected ? Colors.white : Colors.black87,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                ),
-                                elevation: isSelected ? 4 : 0,
-                                shadowColor: Colors.black26,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    
-                    Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
-
-                    // Radius Slider
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      child: Row(
-                        children: [
-                          Icon(Icons.radar_rounded, size: 20, color: Colors.grey[700]),
-                          const SizedBox(width: 12),
-                          Text(
-                            "${_radiusKm.toStringAsFixed(1)} km",
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          Expanded(
-                            child: SliderTheme(
-                              data: SliderTheme.of(context).copyWith(
-                                activeTrackColor: const Color(0xFF041D66),
-                                inactiveTrackColor: Colors.grey[300],
-                                thumbColor: const Color(0xFF041D66),
-                                overlayColor: const Color(0xFF041D66).withOpacity(0.2),
-                                trackHeight: 4,
-                              ),
-                              child: Slider(
-                                value: _radiusKm,
-                                min: 1.0,
-                                max: 10.0,
-                                divisions: 9,
-                                onChanged: (val) => setState(() => _radiusKm = val),
-                                onChangeEnd: (val) => _searchNearbyPlaces(),
-                              ),
-                            ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- BACK BUTTON ---
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF041D66), size: 20),
                     ),
-                  ],
-                ),
+                  ),
+
+                  // --- FILTERS CARD ---
+                  _buildGlassCard(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Categories
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                          child: Row(
+                            children: _categories.map((cat) {
+                              final isSelected = _selectedCategory == cat;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  child: ChoiceChip(
+                                    label: Text(cat),
+                                    selected: isSelected,
+                                    onSelected: (val) {
+                                      if (val) {
+                                        setState(() {
+                                          _selectedCategory = cat;
+                                          _closeCard();
+                                        });
+                                        _searchNearbyPlaces();
+                                      }
+                                    },
+                                    selectedColor: const Color(0xFF041D66),
+                                    backgroundColor: Colors.transparent,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      side: BorderSide(
+                                        color: isSelected ? Colors.transparent : Colors.grey.withOpacity(0.3),
+                                      ),
+                                    ),
+                                    labelStyle: TextStyle(
+                                      color: isSelected ? Colors.white : Colors.black87,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    ),
+                                    elevation: isSelected ? 4 : 0,
+                                    shadowColor: Colors.black26,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        
+                        Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+
+                        // Radius Slider
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          child: Row(
+                            children: [
+                              Icon(Icons.radar_rounded, size: 20, color: Colors.grey[700]),
+                              const SizedBox(width: 12),
+                              Text(
+                                "${_radiusKm.toStringAsFixed(1)} km",
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              Expanded(
+                                child: SliderTheme(
+                                  data: SliderTheme.of(context).copyWith(
+                                    activeTrackColor: const Color(0xFF041D66),
+                                    inactiveTrackColor: Colors.grey[300],
+                                    thumbColor: const Color(0xFF041D66),
+                                    overlayColor: const Color(0xFF041D66).withOpacity(0.2),
+                                    trackHeight: 4,
+                                  ),
+                                  child: Slider(
+                                    value: _radiusKm,
+                                    min: 1.0,
+                                    max: 10.0,
+                                    divisions: 9,
+                                    onChanged: (val) => setState(() => _radiusKm = val),
+                                    onChangeEnd: (val) => _searchNearbyPlaces(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
