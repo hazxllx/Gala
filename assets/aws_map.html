@@ -106,8 +106,14 @@
             pixelRatio: Math.min(window.devicePixelRatio, 2) 
         });
 
-
         map.on('load', function () {
+            addRouteLayer();
+        });
+    }
+
+    // Helper to add the route layer
+    function addRouteLayer() {
+        if (!map.getSource('route')) {
             map.addSource('route', {
                 'type': 'geojson',
                 'data': {
@@ -124,7 +130,7 @@
                 'layout': { 'line-join': 'round', 'line-cap': 'round' },
                 'paint': { 'line-color': '#3B82F6', 'line-width': 6, 'line-opacity': 0.8 }
             });
-        });
+        }
     }
 
     // --- DART FUNCTIONS ---
@@ -160,18 +166,28 @@
         destMarker.setLngLat([lng, lat]).addTo(map);
     }
 
-    // 3. Draw Route
+    // 3. Draw Route (Robust Version)
     function drawRoute(coordinates) {
         if (!map) return;
+
+        // Ensure layer exists before setting data
+        if (!map.getSource('route')) {
+            if (map.isStyleLoaded()) {
+                addRouteLayer();
+            } else {
+                // If map isn't ready, wait for load event then draw
+                map.once('load', () => drawRoute(coordinates));
+                return;
+            }
+        }
+
         const geojson = {
             'type': 'Feature',
             'properties': {},
             'geometry': { 'type': 'LineString', 'coordinates': coordinates }
         };
         
-        if (map.getSource('route')) {
-            map.getSource('route').setData(geojson);
-        }
+        map.getSource('route').setData(geojson);
 
         if (coordinates.length > 0) {
             const bounds = coordinates.reduce(function (bounds, coord) {
