@@ -42,8 +42,9 @@ class _EcoparkPageState extends State<EcoparkPage> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Unable to connect to server. Please check your internet and try again.'),
+            const SnackBar(
+              content: Text(
+                  'Unable to connect to server. Please check your internet and try again.'),
               backgroundColor: Colors.redAccent,
             ),
           );
@@ -79,8 +80,9 @@ class _EcoparkPageState extends State<EcoparkPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unable to connect to server. Please check your internet and try again.'),
+          const SnackBar(
+            content: Text(
+                'Unable to connect to server. Please check your internet and try again.'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -90,8 +92,13 @@ class _EcoparkPageState extends State<EcoparkPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDarkMode ? const Color(0xFF121212) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final subTextColor = isDarkMode ? Colors.white70 : Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       body: Stack(
         children: [
           // Image Carousel
@@ -157,9 +164,9 @@ class _EcoparkPageState extends State<EcoparkPage> {
             right: 0,
             bottom: 0,
             child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(50),
                   topRight: Radius.circular(50),
                 ),
@@ -169,50 +176,50 @@ class _EcoparkPageState extends State<EcoparkPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'About',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
-                        color: Colors.black,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       "Step away from the city's hustle and immerse yourself in nature at Naga Ecology Park. This green sanctuary offers a perfect retreat for families and nature lovers alike. Wander through the eco-walk maze, admire beautifully sculpted topiaries, and explore the serene mini-forest. Whether you're planning a peaceful picnic or an adventure among exotic plants and native trees, this park provides an ideal setting for quality time with loved ones.",
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.normal,
                         fontSize: 12.3,
-                        color: Colors.black87,
+                        color: subTextColor,
                         height: 1.5,
                       ),
                     ),
                     const SizedBox(height: 24),
-                    const Text(
+                    Text(
                       'Operating Hours',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
-                        color: Colors.black,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 18),
-                    _buildOperatingHours(),
+                    _buildOperatingHours(isDarkMode),
                     const SizedBox(height: 24),
-                    const Text(
+                    Text(
                       'Entrance Fee',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
-                        color: Colors.black,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildEntranceFee(),
+                    _buildEntranceFee(isDarkMode),
                     const SizedBox(height: 24),
                     _buildOptionTileWithArrow(
                       context,
@@ -221,36 +228,39 @@ class _EcoparkPageState extends State<EcoparkPage> {
                       () {
                         // TODO: Add navigation to maps
                       },
+                      isDarkMode,
                     ),
                     _buildOptionTileWithArrow(
                       context,
-                      'assets/icons/star_filled.png',
+                      'assets/icons/menu.png',
                       'View Park Gallery',
                       () {
                         // TODO: Add navigation to gallery
                       },
+                      isDarkMode,
                     ),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/star_filled.png',
                       'Give it a rate',
                       () {
-                        _showRatingDialog(context);
+                        _showRatingDialog(context, isDarkMode);
                       },
+                      isDarkMode,
                     ),
                   ],
                 ),
               ),
             ),
           ),
-          const Positioned(
+          Positioned(
             top: 260,
             left: 32,
             right: 32,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Naga Ecology Park',
                   style: TextStyle(
                     fontFamily: 'Inter',
@@ -259,9 +269,9 @@ class _EcoparkPageState extends State<EcoparkPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Row(
-                  children: [
+                  children: const [
                     Icon(Icons.location_on, color: Colors.white, size: 18),
                     SizedBox(width: 4),
                     Expanded(
@@ -317,19 +327,23 @@ class _EcoparkPageState extends State<EcoparkPage> {
     );
   }
 
-  Widget _buildOperatingHours() {
+  Widget _buildOperatingHours(bool isDarkMode) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
-          ),
+          if (!isDarkMode)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              spreadRadius: 0,
+              offset: const Offset(0, 2),
+            ),
         ],
+        border: isDarkMode
+            ? null
+            : Border.all(color: const Color(0xFFE5E9F2), width: 1),
       ),
       child: Column(
         children: [
@@ -356,8 +370,8 @@ class _EcoparkPageState extends State<EcoparkPage> {
               ),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
             child: Column(
               children: [
                 Text(
@@ -366,17 +380,17 @@ class _EcoparkPageState extends State<EcoparkPage> {
                     fontFamily: 'Inter',
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: isDarkMode ? Colors.white : Colors.black87,
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
                   'Everyday',
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: Colors.black54,
+                    color: isDarkMode ? Colors.white70 : Colors.black54,
                   ),
                 ),
               ],
@@ -387,7 +401,7 @@ class _EcoparkPageState extends State<EcoparkPage> {
     );
   }
 
-  Widget _buildEntranceFee() {
+  Widget _buildEntranceFee(bool isDarkMode) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -398,19 +412,20 @@ class _EcoparkPageState extends State<EcoparkPage> {
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0B4C8C).withOpacity(0.3),
-            blurRadius: 12,
-            spreadRadius: 0,
-            offset: const Offset(0, 4),
-          ),
+          if (!isDarkMode)
+            BoxShadow(
+              color: const Color(0xFF0B4C8C).withOpacity(0.3),
+              blurRadius: 12,
+              spreadRadius: 0,
+              offset: const Offset(0, 4),
+            ),
         ],
       ),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
-            children: [
+            children: const [
               Icon(
                 Icons.local_activity,
                 color: Colors.white,
@@ -428,7 +443,7 @@ class _EcoparkPageState extends State<EcoparkPage> {
               ),
             ],
           ),
-          Text(
+          const Text(
             '₱20',
             style: TextStyle(
               fontFamily: 'Inter',
@@ -447,6 +462,7 @@ class _EcoparkPageState extends State<EcoparkPage> {
     String imagePath,
     String text,
     VoidCallback onTap,
+    bool isDarkMode,
   ) {
     return GestureDetector(
       onTap: onTap,
@@ -455,15 +471,16 @@ class _EcoparkPageState extends State<EcoparkPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 10,
-                spreadRadius: 2,
-                offset: Offset(0, 5),
-              ),
+            boxShadow: [
+              if (!isDarkMode)
+                const BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                  offset: Offset(0, 5),
+                ),
             ],
           ),
           child: Row(
@@ -478,15 +495,19 @@ class _EcoparkPageState extends State<EcoparkPage> {
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: Colors.black,
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.black45, size: 28),
+              Icon(
+                Icons.chevron_right,
+                color: isDarkMode ? Colors.white70 : Colors.black45,
+                size: 28,
+              ),
             ],
           ),
         ),
@@ -494,7 +515,7 @@ class _EcoparkPageState extends State<EcoparkPage> {
     );
   }
 
-  void _showRatingDialog(BuildContext context) {
+  void _showRatingDialog(BuildContext context, bool isDarkMode) {
     int selected = 0;
     bool isSubmitting = false;
 
@@ -504,7 +525,8 @@ class _EcoparkPageState extends State<EcoparkPage> {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) => Dialog(
-            backgroundColor: const Color(0xFFF8F8FF),
+            backgroundColor:
+                isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F8FF),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),
@@ -513,10 +535,11 @@ class _EcoparkPageState extends State<EcoparkPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'Rate Naga Ecology Park',
                     style: TextStyle(
-                      color: Color(0xFF0B55A0),
+                      color:
+                          isDarkMode ? Colors.white : const Color(0xFF0B55A0),
                       fontWeight: FontWeight.bold,
                       fontSize: 22,
                       letterSpacing: 0.5,
@@ -549,10 +572,12 @@ class _EcoparkPageState extends State<EcoparkPage> {
                           onPressed: isSubmitting
                               ? null
                               : () => Navigator.pop(dialogContext),
-                          child: const Text(
+                          child: Text(
                             'Cancel',
                             style: TextStyle(
-                              color: Color(0xFF0B55A0),
+                              color: isDarkMode
+                                  ? Colors.white70
+                                  : const Color(0xFF0B55A0),
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                               letterSpacing: 0.2,
@@ -566,10 +591,12 @@ class _EcoparkPageState extends State<EcoparkPage> {
                           onPressed: (selected > 0 && !isSubmitting)
                               ? () async {
                                   setState(() => isSubmitting = true);
-                                  final user = FirebaseAuth.instance.currentUser;
+                                  final user =
+                                      FirebaseAuth.instance.currentUser;
                                   try {
                                     if (user != null) {
-                                      final ratingRef = FirebaseFirestore.instance
+                                      final ratingRef = FirebaseFirestore
+                                          .instance
                                           .collection('parks')
                                           .doc('Naga Ecology Park')
                                           .collection('ratings')
@@ -577,9 +604,11 @@ class _EcoparkPageState extends State<EcoparkPage> {
                                       await ratingRef.set({'rating': selected});
                                       if (dialogContext.mounted) {
                                         Navigator.pop(dialogContext);
-                                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                        ScaffoldMessenger.of(dialogContext)
+                                            .showSnackBar(
                                           const SnackBar(
-                                            content: Text('Thanks for rating Naga Ecology Park!'),
+                                            content: Text(
+                                                'Thanks for rating Naga Ecology Park!'),
                                             backgroundColor: Color(0xFF0B55A0),
                                           ),
                                         );
@@ -587,9 +616,11 @@ class _EcoparkPageState extends State<EcoparkPage> {
                                     }
                                   } catch (e) {
                                     if (dialogContext.mounted) {
-                                      ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Unable to connect to server. Please try again later.'),
+                                      ScaffoldMessenger.of(dialogContext)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              'Unable to connect to server. Please try again later.'),
                                           backgroundColor: Colors.redAccent,
                                         ),
                                       );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+// Google Fonts import removed
 import 'package:my_project/screens/home/cafe.dart' as naga;
 import 'package:my_project/screens/home/directions_screen.dart';
 import 'package:my_project/screens/home/nearby.dart';
@@ -165,6 +166,186 @@ class _CategoryScreenState extends State<CategoryScreen> {
         );
       }
     });
+  }
+
+  // --- MODERN FARE DIALOG (No Google Fonts) ---
+  void _showFareDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final titleColor = isDark ? Colors.white : const Color(0xFF2D3436);
+    final cardColor = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          backgroundColor: backgroundColor,
+          elevation: 0,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2D9CDB).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.payments_rounded,
+                        color: Color(0xFF2D9CDB),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        "Transport & Fare",
+                        style: TextStyle( // Replaced GoogleFonts with TextStyle
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold, // Bold for emphasis
+                          color: titleColor,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Tricycle Section
+                _buildModernFareCard(
+                  icon: Icons.electric_rickshaw_rounded, // Or Icons.moped
+                  iconColor: Colors.orange,
+                  title: "Tricycle",
+                  regularPrice: "15",
+                  discountedPrice: "12",
+                  isDark: isDark,
+                  cardColor: cardColor,
+                  titleColor: titleColor,
+                ),
+                
+                const SizedBox(height: 16),
+
+                // Jeep Section
+                _buildModernFareCard(
+                  icon: Icons.directions_bus_filled_rounded,
+                  iconColor: Colors.blueAccent,
+                  title: "Jeep",
+                  regularPrice: "13",
+                  discountedPrice: "11",
+                  isDark: isDark,
+                  cardColor: cardColor,
+                  titleColor: titleColor,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Close Button
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
+                    ),
+                    child: Text(
+                      "Close",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white70 : Colors.grey[800],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildModernFareCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String regularPrice,
+    required String discountedPrice,
+    required bool isDark,
+    required Color cardColor,
+    required Color titleColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200]!,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: iconColor, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle( // Replaced GoogleFonts with TextStyle
+                  fontSize: 18,
+                  color: titleColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildPriceRow("Regular", regularPrice, isDark),
+          const SizedBox(height: 8),
+          _buildPriceRow("Student, Senior, PWD", discountedPrice, isDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriceRow(String label, String price, bool isDark) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Text(
+          "₱$price",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -404,10 +585,26 @@ class _CategoryScreenState extends State<CategoryScreen> {
               },
             ),
             const SizedBox(height: 12),
+            
+            // --- CHECK FARE BUTTON ---
             ActionButton(
-                icon: 'assets/fare.png',
-                label: "Check public transport & fare",
-                isDarkMode: isDarkMode),
+              icon: 'assets/fare.png',
+              label: "Check public transport & fare",
+              isDarkMode: isDarkMode,
+              onTap: () {
+                if (widget.locationName.toLowerCase().contains('naga')) {
+                  _showFareDialog(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          'Fare info available for Naga only. Current: ${widget.locationName}'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+              },
+            ),
             const SizedBox(height: 40),
           ],
         ),
@@ -416,7 +613,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 }
 
-/// CATEGORY CARD FIXED ✔
+/// CATEGORY CARD
 class CategoryCard extends StatefulWidget {
   final String image;
   final String name;
@@ -504,7 +701,7 @@ class _CategoryCardState extends State<CategoryCard>
   }
 }
 
-/// ACTION BUTTON — unchanged
+/// ACTION BUTTON
 class ActionButton extends StatelessWidget {
   final String icon;
   final String label;
@@ -554,7 +751,6 @@ class ActionButton extends StatelessWidget {
                 height: 40,
                 width: 40,
                 errorBuilder: (context, error, stackTrace) {
-                  print("Could not load image '$icon': $error");
                   return const Icon(
                     Icons.broken_image,
                     color: Colors.grey,

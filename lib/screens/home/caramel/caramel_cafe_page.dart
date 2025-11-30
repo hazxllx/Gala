@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Caramel Cafe Page
+import 'CaramelMenuPage.dart';
+
 class CaramelCafePage extends StatefulWidget {
   const CaramelCafePage({super.key});
 
@@ -12,7 +13,7 @@ class CaramelCafePage extends StatefulWidget {
 
 class _CaramelCafePageState extends State<CaramelCafePage> {
   bool isFavorited = false;
-  PageController _pageController = PageController();
+  final PageController _pageController = PageController();
   int currentImageIndex = 0;
 
   final List<String> images = [
@@ -35,11 +36,8 @@ class _CaramelCafePageState extends State<CaramelCafePage> {
           .collection('favorites')
           .doc('Caramel Cafe')
           .get();
-      if (mounted) {
-        setState(() {
-          isFavorited = doc.exists;
-        });
-      }
+
+      if (mounted) setState(() => isFavorited = doc.exists);
     }
   }
 
@@ -64,20 +62,31 @@ class _CaramelCafePageState extends State<CaramelCafePage> {
       await favoritesDoc.delete();
     }
 
-    setState(() {
-      isFavorited = !isFavorited;
-    });
+    setState(() => isFavorited = !isFavorited);
+  }
+
+  Route _fadeRoute(Widget page) {
+    return PageRouteBuilder(
+      pageBuilder: (_, a, __) => FadeTransition(opacity: a, child: page),
+      transitionDuration: const Duration(milliseconds: 300),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final Color bgColor = isDark ? const Color(0xFF121212) : Colors.white;
+    final Color cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black;
+    final Color subtitleColor =
+        isDark ? Colors.grey[400]! : const Color.fromARGB(221, 52, 52, 52);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       body: Stack(
         children: [
-          // ======================
-          // HERO IMAGE CAROUSEL
-          // ======================
+          // HERO IMAGE
           Positioned(
             top: -70,
             left: 0,
@@ -92,14 +101,14 @@ class _CaramelCafePageState extends State<CaramelCafePage> {
                     onPageChanged: (i) {
                       setState(() => currentImageIndex = i);
                     },
-                    itemBuilder: (context, index) {
+                    itemBuilder: (context, i) {
                       return Container(
                         decoration: BoxDecoration(
                           image: DecorationImage(
-                            image: NetworkImage(images[index]),
+                            image: NetworkImage(images[i]),
                             fit: BoxFit.cover,
                             colorFilter: ColorFilter.mode(
-                              Colors.black.withOpacity(0.22),
+                              Colors.black.withOpacity(isDark ? 0.35 : 0.22),
                               BlendMode.darken,
                             ),
                           ),
@@ -107,9 +116,9 @@ class _CaramelCafePageState extends State<CaramelCafePage> {
                       );
                     },
                   ),
-                  // IMAGE INDICATORS
+
                   Positioned(
-                    bottom: 30,
+                    bottom: 40,
                     left: 0,
                     right: 0,
                     child: Row(
@@ -130,24 +139,22 @@ class _CaramelCafePageState extends State<CaramelCafePage> {
                         ),
                       ),
                     ),
-                  ),
+                  )
                 ],
               ),
             ),
           ),
 
-          // ===========================
-          // BOTTOM SHEET CONTENT
-          // ===========================
+          // CONTENT AREA
           Positioned(
             top: 360,
             left: 0,
             right: 0,
             bottom: 0,
             child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(50),
                   topRight: Radius.circular(50),
                 ),
@@ -157,58 +164,72 @@ class _CaramelCafePageState extends State<CaramelCafePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // About Section
-                    const Text(
+                    // ABOUT
+                    Text(
                       'About',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       "Caramel Café welcomes you with wholehearted goodness through its cozy atmosphere and crafted treats.",
                       style: TextStyle(
                         fontFamily: 'Inter',
-                        fontSize: 12.8,
-                        color: Colors.black87,
-                        height: 1.5,
+                        fontSize: 13,
+                        color: subtitleColor,
+                        height: 1.45,
                       ),
                     ),
+
                     const SizedBox(height: 24),
 
-                    // Business Hours Section
-                    const Text(
+                    // HOURS
+                    Text(
                       'Business Hours',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 18),
-                    _buildBusinessHours(),
-                    const SizedBox(height: 24),
+                    _buildBusinessHours(isDark),
 
-                    // Options
+                    const SizedBox(height: 28),
+
+                    // OPTION TILES
                     _buildOptionTile(
+                      isDark,
                       context,
                       'assets/icons/location.png',
-                      'Go to Location and More Details',
+                      "Go to Location and More Details",
                       () {},
                     ),
+
                     _buildOptionTile(
+                      isDark,
                       context,
                       'assets/icons/menu.png',
                       "View Caramel Cafe's Menu",
-                      () {},
+                      () {
+                        Navigator.push(
+                          context,
+                          _fadeRoute(const CaramelMenuPage()),
+                        );
+                      },
                     ),
+
                     _buildOptionTile(
+                      isDark,
                       context,
                       'assets/icons/star_filled.png',
-                      'Give it a rate',
-                      () => _showRatingDialog(context),
+                      "Give it a rate",
+                      () => _showRatingDialog(context, isDark),
                     ),
                   ],
                 ),
@@ -216,41 +237,44 @@ class _CaramelCafePageState extends State<CaramelCafePage> {
             ),
           ),
 
-          // ======================
           // TITLE OVERLAY
-          // ======================
-          const Positioned(
+          Positioned(
             top: 260,
             left: 32,
-            right: 32,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Caramel Cafe',
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    color: Colors.white,
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black54,
+                        blurRadius: 6,
+                      )
+                    ],
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.location_on, color: Colors.white, size: 18),
-                    SizedBox(width: 4),
-                    Expanded(
+                    const Icon(Icons.location_on, color: Colors.white, size: 18),
+                    const SizedBox(width: 4),
+                    SizedBox(
+                      width: 260,
                       child: Text(
                         'Diversion Road, Naga City (In front of Bennett’s Plaza)',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontFamily: 'Inter',
-                          color: Colors.white,
                           fontSize: 13.6,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          height: 1.3,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -276,17 +300,23 @@ class _CaramelCafePageState extends State<CaramelCafePage> {
             child: ElevatedButton.icon(
               onPressed: _handleFavoriteToggle,
               style: ElevatedButton.styleFrom(
-                backgroundColor: isFavorited
-                    ? const Color.fromARGB(255, 150, 70, 50)
-                    : Colors.white,
+                backgroundColor:
+                    isFavorited ? const Color(0xFF0D4776) : Colors.white,
+                elevation: 5,
                 foregroundColor:
-                    isFavorited ? Colors.white : const Color(0xFF8B4A2B),
-                elevation: 4,
+                    isFavorited ? Colors.white : const Color(0xFF075A9E),
               ),
               icon: Icon(
                 isFavorited ? Icons.check : Icons.favorite_border,
+                color: isFavorited ? Colors.white : const Color(0xFF075A9E),
               ),
-              label: Text(isFavorited ? 'Added' : 'Add to favorite'),
+              label: Text(
+                isFavorited ? "Added" : "Add to favorite",
+                style: TextStyle(
+                  color: isFavorited ? Colors.white : const Color(0xFF075A9E),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ],
@@ -294,19 +324,32 @@ class _CaramelCafePageState extends State<CaramelCafePage> {
     );
   }
 
-  // Business Hours Widget (Uniform schedule)
-  Widget _buildBusinessHours() {
+  // BUSINESS HOURS WIDGET
+  Widget _buildBusinessHours(bool isDark) {
+    final Color cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final Color textColor = isDark ? Colors.white : Colors.black;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E9F2), width: 1),
+        border: Border.all(
+          color: isDark ? Colors.transparent : const Color(0xFFE5E9F2),
+        ),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+        ],
       ),
       child: Column(
         children: [
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            height: 42,
+            alignment: Alignment.center,
             decoration: const BoxDecoration(
               color: Color(0xFF1556B1),
               borderRadius: BorderRadius.only(
@@ -314,234 +357,220 @@ class _CaramelCafePageState extends State<CaramelCafePage> {
                 topRight: Radius.circular(18),
               ),
             ),
-            child: const Center(
-              child: Text(
-                "Open",
-                style: TextStyle(
-                  fontFamily: "Inter",
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
+            child: const Text(
+              "Open",
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
           ),
-
-          // Uniform Hours
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Column(
-              children: const [
-                Text(
-                  "10AM - 10PM",
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  "Open daily",
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                    color: Colors.black54,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 14),
+          Text(
+            "10AM - 10PM",
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: textColor,
             ),
           ),
+          const SizedBox(height: 6),
+          Text(
+            "Open daily",
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              color: isDark ? Colors.grey[300] : Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
+  // ⭐ UPDATED OPTION TILE (EXACT COLOR MATCH)
   Widget _buildOptionTile(
+    bool isDark,
     BuildContext context,
-    String imagePath,
+    String iconPath,
     String text,
     VoidCallback onTap,
   ) {
     return GestureDetector(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 10,
-                spreadRadius: 2,
-                offset: Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Image.asset(
-                imagePath,
-                width: 28,
-                height: 28,
-                fit: BoxFit.contain,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  text,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: Colors.black,
-                  ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        decoration: BoxDecoration(
+          color: isDark ? const Color.fromARGB(255, 42, 42, 42) : const Color(0xFFF2F2F2),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Image.asset(iconPath, width: 26, height: 26),
+            const SizedBox(width: 18),
+
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.black45, size: 28),
-            ],
-          ),
+            ),
+
+            Icon(
+              Icons.chevron_right,
+              size: 24,
+              color: isDark ? const Color(0xFF7A7A7A) : Colors.black54,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // Rating Dialog
-  void _showRatingDialog(BuildContext context) {
+  // RATING DIALOG
+  void _showRatingDialog(BuildContext context, bool isDark) {
     int selected = 0;
     bool isSubmitting = false;
 
     showDialog(
       context: context,
-      barrierColor: Colors.black38,
+      barrierColor: Colors.black26,
       builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setState) => Dialog(
-            backgroundColor: const Color(0xFFF8F8FF),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Rate Caramel Cafe',
-                    style: TextStyle(
-                      color: Color(0xFF0B55A0),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
-                      letterSpacing: 0.5,
+          builder: (_, setState) {
+            final Color dialogColor =
+                isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF8F8FF);
+
+            return Dialog(
+              backgroundColor: dialogColor,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24)),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Rate Caramel Cafe',
+                      style: TextStyle(
+                        fontSize: 22,
+                        color: Color(0xFF0B55A0),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 22),
+                    const SizedBox(height: 22),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (i) {
-                      return IconButton(
-                        icon: Icon(
-                          i < selected ? Icons.star : Icons.star_border,
-                          color: i < selected
-                              ? const Color(0xFF0B55A0)
-                              : Colors.amber[400],
-                          size: 36,
-                        ),
-                        onPressed: () => setState(() => selected = i + 1),
-                      );
-                    }),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextButton(
-                          onPressed: isSubmitting
-                              ? null
-                              : () => Navigator.pop(dialogContext),
-                          child: const Text(
-                            'Cancel',
-                            style: TextStyle(
-                              color: Color(0xFF0B55A0),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: (selected > 0 && !isSubmitting)
-                              ? () async {
-                                  setState(() => isSubmitting = true);
-
-                                  final user =
-                                      FirebaseAuth.instance.currentUser;
-                                  if (user != null) {
-                                    await FirebaseFirestore.instance
-                                        .collection('cafes')
-                                        .doc('Caramel Cafe')
-                                        .collection('ratings')
-                                        .doc(user.uid)
-                                        .set({'rating': selected});
-                                  }
-
-                                  if (dialogContext.mounted) {
-                                    Navigator.pop(dialogContext);
-                                    ScaffoldMessenger.of(dialogContext)
-                                        .showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                            'Thanks for rating Caramel Cafe!'),
-                                        backgroundColor: Color(0xFF0B55A0),
-                                      ),
-                                    );
-                                  }
-
-                                  if (mounted) {
-                                    setState(() => isSubmitting = false);
-                                  }
-                                }
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: selected > 0
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        5,
+                        (i) => IconButton(
+                          icon: Icon(
+                            i < selected ? Icons.star : Icons.star_border,
+                            size: 36,
+                            color: i < selected
                                 ? const Color(0xFF0B55A0)
-                                : Colors.grey[300],
-                            foregroundColor:
-                                selected > 0 ? Colors.white : Colors.grey,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18),
-                            ),
+                                : Colors.amber,
                           ),
-                          child: isSubmitting
-                              ? const CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                )
-                              : const Text(
-                                  'Submit',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                          onPressed: () => setState(() => selected = i + 1),
                         ),
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+
+                    const SizedBox(height: 26),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () =>
+                                Navigator.pop(dialogContext),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF0B55A0),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: selected == 0
+                                ? null
+                                : () async {
+                                    setState(() => isSubmitting = true);
+
+                                    final user =
+                                        FirebaseAuth.instance.currentUser;
+                                    if (user != null) {
+                                      await FirebaseFirestore.instance
+                                          .collection('cafes')
+                                          .doc('Caramel Cafe')
+                                          .collection('ratings')
+                                          .doc(user.uid)
+                                          .set({'rating': selected});
+                                    }
+
+                                    if (dialogContext.mounted) {
+                                      Navigator.pop(dialogContext);
+                                      ScaffoldMessenger.of(dialogContext)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              "Thanks for rating Caramel Cafe!"),
+                                          backgroundColor: Color(0xFF0B55A0),
+                                        ),
+                                      );
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0B55A0),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                            ),
+                            child: isSubmitting
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Submit',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        )
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );

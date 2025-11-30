@@ -73,8 +73,14 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Determine colors based on theme
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDarkMode ? const Color(0xFF121212) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final subtextColor = isDarkMode ? Colors.white70 : Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       body: Stack(
         children: [
           // IMAGE CAROUSEL
@@ -143,9 +149,9 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
             right: 0,
             bottom: 0,
             child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(50),
                   topRight: Radius.circular(50),
                 ),
@@ -156,34 +162,34 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ABOUT
-                    const Text(
+                    Text(
                       'About',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
-                        color: Colors.black,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       "Unwind and refresh your spirit at PMAQ Ville Resort—a tranquil haven where relaxation takes center stage. It’s the perfect spot to escape daily stress and experience true peace.",
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 12.5,
-                        color: Colors.black87,
+                        color: subtextColor,
                         height: 1.5,
                       ),
                     ),
 
                     const SizedBox(height: 28),
 
-                    // ⭐ NEW OPERATING HOURS CARD (OPTION A)
-                    _buildOperatingHoursCard(),
+                    // ⭐ NEW OPERATING HOURS CARD
+                    _buildOperatingHoursCard(isDarkMode),
                     const SizedBox(height: 28),
 
                     // ENTRANCE RATES
-                    _buildEntranceRatesPmaq(),
+                    _buildEntranceRatesPmaq(isDarkMode),
                     const SizedBox(height: 40),
 
                     // ACTION BUTTONS
@@ -192,18 +198,21 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                       'assets/icons/location.png',
                       'Go to Location and More Details',
                       () {},
+                      isDarkMode,
                     ),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/menu.png',
                       "View PMAQ's Amenities",
                       () {},
+                      isDarkMode,
                     ),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/star_filled.png',
                       'Give it a rate',
-                      () => _showRatingDialog(context),
+                      () => _showRatingDialog(context, isDarkMode),
+                      isDarkMode,
                     ),
                   ],
                 ),
@@ -284,36 +293,36 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
     );
   }
 
-  // ⭐⭐⭐ NEW — OPERATING HOURS CARD
-  Widget _buildOperatingHoursCard() {
+  // OPERATING HOURS CARD
+  Widget _buildOperatingHoursCard(bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "Business Hours",
           style: TextStyle(
             fontFamily: 'Inter',
             fontWeight: FontWeight.bold,
             fontSize: 22,
+            color: isDarkMode ? Colors.white : Colors.black,
           ),
         ),
         const SizedBox(height: 12),
-
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            color: const Color(0xFFF7F8FC),
+            color: isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF7F8FC),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
+              if (!isDarkMode)
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
             ],
           ),
           child: Column(
             children: [
-              // BLUE BAR
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -332,27 +341,25 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                   ),
                 ),
               ),
-
-              // WHITE PART
               Padding(
                 padding:
                     const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                 child: Column(
-                  children: const [
+                  children: [
                     Text(
                       "7:00 AM – 6:00 PM",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: Color(0xFF0B1A2E),
+                        color: isDarkMode ? Colors.white : const Color(0xFF0B1A2E),
                       ),
                     ),
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     Text(
                       "Everyday",
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.black54,
+                        color: isDarkMode ? Colors.white70 : Colors.black54,
                       ),
                     ),
                   ],
@@ -365,35 +372,34 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
     );
   }
 
-  // ------------------- ENTRANCE RATES -------------------
-  Widget _buildEntranceRatesPmaq() {
+  // ENTRANCE RATES CARD
+  Widget _buildEntranceRatesPmaq(bool isDarkMode) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FC),
+        color: isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF7F8FC),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Color(0xFFE5E9F2), width: 1),
+        border: isDarkMode ? null : Border.all(color: const Color(0xFFE5E9F2), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.pool, size: 20, color: Color(0xFF1556B1)),
-              SizedBox(width: 8),
+            children: [
+              const Icon(Icons.pool, size: 20, color: Color(0xFF1556B1)),
+              const SizedBox(width: 8),
               Text(
                 'Entrance Rates',
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: Color(0xFF0B1A2E),
+                  color: isDarkMode ? Colors.white : const Color(0xFF0B1A2E),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 18),
-
           const Text(
             'Daytime 7:00 AM - 5:00 PM',
             style: TextStyle(
@@ -403,14 +409,12 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
             ),
           ),
           const SizedBox(height: 10),
-          _buildRateRow('Adult (13yrs old above)', '₱250'),
+          _buildRateRow('Adult (13yrs old above)', '₱250', isDarkMode),
           const SizedBox(height: 8),
-          _buildRateRow('Kids (6–12yrs old)', '₱180'),
+          _buildRateRow('Kids (6–12yrs old)', '₱180', isDarkMode),
           const SizedBox(height: 8),
-          _buildRateRow('Kids (1–5yrs old)', 'FREE'),
-
+          _buildRateRow('Kids (1–5yrs old)', 'FREE', isDarkMode),
           const SizedBox(height: 25),
-
           const Text(
             'Night Time 6:00 PM - 7:00 AM',
             style: TextStyle(
@@ -420,51 +424,52 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
             ),
           ),
           const SizedBox(height: 10),
-          _buildRateRow('Adult (13yrs old above)', '₱250'),
+          _buildRateRow('Adult (13yrs old above)', '₱250', isDarkMode),
           const SizedBox(height: 8),
-          _buildRateRow('Kids (6–12yrs old)', '₱180'),
+          _buildRateRow('Kids (6–12yrs old)', '₱180', isDarkMode),
           const SizedBox(height: 8),
-          _buildRateRow('Kids (1–5yrs old)', 'FREE'),
+          _buildRateRow('Kids (1–5yrs old)', 'FREE', isDarkMode),
         ],
       ),
     );
   }
 
-  // ------------------- RATE ROW -------------------
-  Widget _buildRateRow(String name, String price) {
+  // RATE ROW HELPER
+  Widget _buildRateRow(String name, String price, bool isDarkMode) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
           child: Text(
             name,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF4A5568),
+              color: isDarkMode ? Colors.white70 : const Color(0xFF4A5568),
             ),
           ),
         ),
         Text(
           price,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Inter',
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1556B1),
+            color: isDarkMode ? Colors.white : const Color(0xFF1556B1),
           ),
         ),
       ],
     );
   }
 
-  // ------------------- ACTION TILE -------------------
+  // ACTION TILE
   Widget _buildOptionTileWithArrow(
     BuildContext context,
     String imagePath,
     String text,
     VoidCallback onTap,
+    bool isDarkMode,
   ) {
     return GestureDetector(
       onTap: onTap,
@@ -473,15 +478,16 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 10,
-                spreadRadius: 2,
-                offset: Offset(0, 5),
-              ),
+            boxShadow: [
+              if (!isDarkMode)
+                const BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                  offset: Offset(0, 5),
+                ),
             ],
           ),
           child: Row(
@@ -496,15 +502,15 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: Colors.black,
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.black45, size: 28),
+              Icon(Icons.chevron_right, color: isDarkMode ? Colors.white70 : Colors.black45, size: 28),
             ],
           ),
         ),
@@ -512,8 +518,8 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
     );
   }
 
-  // ------------------- RATING DIALOG -------------------
-  void _showRatingDialog(BuildContext context) {
+  // RATING DIALOG
+  void _showRatingDialog(BuildContext context, bool isDarkMode) {
     int selected = 0;
     bool isSubmitting = false;
 
@@ -523,7 +529,7 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) => Dialog(
-            backgroundColor: const Color(0xFFF8F8FF),
+            backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F8FF),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),
@@ -535,15 +541,14 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                 children: [
                   Text(
                     'Rate $kResortTitle',
-                    style: const TextStyle(
-                      color: Color(0xFF0B55A0),
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : const Color(0xFF0B55A0),
                       fontWeight: FontWeight.bold,
                       fontSize: 22,
                       letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 22),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (i) {
@@ -561,9 +566,7 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                       );
                     }),
                   ),
-
                   const SizedBox(height: 24),
-
                   Row(
                     children: [
                       Expanded(
@@ -571,10 +574,10 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                           onPressed: isSubmitting
                               ? null
                               : () => Navigator.pop(dialogContext),
-                          child: const Text(
+                          child: Text(
                             'Cancel',
                             style: TextStyle(
-                              color: Color(0xFF0B55A0),
+                              color: isDarkMode ? Colors.white70 : const Color(0xFF0B55A0),
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                               letterSpacing: 0.2,
@@ -583,7 +586,6 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                         ),
                       ),
                       const SizedBox(width: 8),
-
                       Expanded(
                         child: ElevatedButton(
                           onPressed:
@@ -606,11 +608,11 @@ class _PmaqVilleResortPageState extends State<PmaqVilleResortPage> {
                                           Navigator.pop(dialogContext);
                                           ScaffoldMessenger.of(dialogContext)
                                               .showSnackBar(
-                                            SnackBar(
+                                            const SnackBar(
                                               content: Text(
-                                                  'Thanks for rating $kResortTitle!'),
+                                                  'Thanks for rating!'),
                                               backgroundColor:
-                                                  const Color(0xFF0B55A0),
+                                                  Color(0xFF0B55A0),
                                             ),
                                           );
                                         }

@@ -65,8 +65,13 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDarkMode ? const Color(0xFF121212) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final subTextColor = isDarkMode ? Colors.white70 : Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       body: Stack(
         children: [
           // Hero image
@@ -83,7 +88,7 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
                       'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/harina_cafe.jpeg'),
                   fit: BoxFit.cover,
                   colorFilter: ColorFilter.mode(
-                    Colors.black.withValues(alpha: 0.22),
+                    Colors.black.withOpacity(0.22),
                     BlendMode.darken,
                   ),
                 ),
@@ -98,9 +103,9 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
             right: 0,
             bottom: 0,
             child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(50),
                   topRight: Radius.circular(50),
                 ),
@@ -110,39 +115,39 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'About',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
-                        color: Colors.black,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       "Harina Cafe is a pastry-focused cafe that offers a wide range of food and beverages. From coffees to milkbase; from pastas to pastries. The soothing ambience of the cafe is something to see for yourself.",
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 12.3,
-                        color: Colors.black87,
+                        color: subTextColor,
                         height: 1.5,
                       ),
                     ),
                     const SizedBox(height: 24),
 
-                    // 👇 NEW PMAQ-STYLE HOURS
-                    const Text(
+                    // NEW PMAQ-STYLE HOURS
+                    Text(
                       'Business Hours',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
-                        color: Colors.black,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 18),
-                    _buildBusinessHours(),
+                    _buildBusinessHours(isDarkMode),
                     const SizedBox(height: 24),
 
                     _buildOptionTileWithArrow(
@@ -150,18 +155,21 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
                       'assets/icons/location.png',
                       'Go to Location and More Details',
                       () {},
+                      isDarkMode,
                     ),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/menu.png',
                       "View Harina Cafe's Menu",
                       () {},
+                      isDarkMode,
                     ),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/star_filled.png',
                       'Give it a rate',
-                      () => _showRatingDialog(context),
+                      () => _showRatingDialog(context, isDarkMode),
+                      isDarkMode,
                     ),
                   ],
                 ),
@@ -170,14 +178,14 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
           ),
 
           // Title overlay
-          const Positioned(
+          Positioned(
             top: 260,
             left: 32,
             right: 32,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Harina Cafe',
                   style: TextStyle(
                     fontFamily: 'Inter',
@@ -186,11 +194,11 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.location_on, color: Colors.white, size: 18),
-                    SizedBox(width: 4),
+                    const Icon(Icons.location_on, color: Colors.white, size: 18),
+                    const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         'Narra St. Mariano Village, Magsaysay Ave., Naga City, Camarines Sur',
@@ -226,11 +234,11 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
               onPressed: _handleFavoriteToggle,
               style: ElevatedButton.styleFrom(
                 backgroundColor: isFavorited
-                    ? const Color.fromARGB(255, 13, 71, 118)
+                    ? const Color(0xFF0D4776)
                     : Colors.white,
                 foregroundColor: isFavorited
                     ? Colors.white
-                    : const Color.fromARGB(255, 7, 90, 158),
+                    : const Color(0xFF075A9E),
                 elevation: 4,
               ),
               icon: Icon(isFavorited ? Icons.check : Icons.favorite_border),
@@ -242,18 +250,27 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
     );
   }
 
-  // ⭐ NEW — PMAQ-FULL-WIDTH OPEN BAR
-  Widget _buildBusinessHours() {
+  // NEW — PMAQ-FULL-WIDTH OPEN BAR
+  Widget _buildBusinessHours(bool isDarkMode) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E9F2), width: 1),
+        border: isDarkMode
+            ? null
+            : Border.all(color: const Color(0xFFE5E9F2), width: 1),
+        boxShadow: [
+          if (!isDarkMode)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+        ],
       ),
-
       child: Column(
         children: [
-          // FULL-WIDTH BLUE BAR — SAME AS PMAQ
+          // FULL-WIDTH BLUE BAR
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -277,15 +294,15 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
             ),
           ),
 
-          // WHITE CONTENT
+          // CONTENT
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildHoursColumn("11AM - 11PM", "Monday"),
-                _buildHoursColumn("10AM - 11PM", "Tue – Sat"),
-                _buildHoursColumn("9AM - 11PM", "Sunday"),
+                _buildHoursColumn("11AM - 11PM", "Monday", isDarkMode),
+                _buildHoursColumn("10AM - 11PM", "Tue – Sat", isDarkMode),
+                _buildHoursColumn("9AM - 11PM", "Sunday", isDarkMode),
               ],
             ),
           ),
@@ -294,25 +311,26 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
     );
   }
 
-  Widget _buildHoursColumn(String hours, String day) {
+  Widget _buildHoursColumn(String hours, String day, bool isDarkMode) {
     return Expanded(
       child: Column(
         children: [
           Text(
             hours,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Inter',
               fontWeight: FontWeight.bold,
               fontSize: 16,
+              color: isDarkMode ? Colors.white : Colors.black87,
             ),
           ),
           const SizedBox(height: 3),
           Text(
             day,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 13.1,
-              color: Colors.black54,
+              color: isDarkMode ? Colors.white70 : Colors.black54,
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
@@ -327,6 +345,7 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
     String imagePath,
     String text,
     VoidCallback onTap,
+    bool isDarkMode,
   ) {
     return GestureDetector(
       onTap: onTap,
@@ -335,15 +354,16 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 10,
-                spreadRadius: 2,
-                offset: Offset(0, 5),
-              ),
+            boxShadow: [
+              if (!isDarkMode)
+                const BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                  offset: Offset(0, 5),
+                ),
             ],
           ),
           child: Row(
@@ -358,15 +378,19 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: Colors.black,
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.black45, size: 28),
+              Icon(
+                Icons.chevron_right,
+                color: isDarkMode ? Colors.white70 : Colors.black45,
+                size: 28,
+              ),
             ],
           ),
         ),
@@ -374,7 +398,7 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
     );
   }
 
-  void _showRatingDialog(BuildContext context) {
+  void _showRatingDialog(BuildContext context, bool isDarkMode) {
     int selected = 0;
     bool isSubmitting = false;
 
@@ -384,13 +408,13 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) => Dialog(
-            backgroundColor: const Color(0xFFF8F8FF),
+            backgroundColor:
+                isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F8FF),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -430,10 +454,12 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
                           onPressed: isSubmitting
                               ? null
                               : () => Navigator.pop(dialogContext),
-                          child: const Text(
+                          child: Text(
                             'Cancel',
                             style: TextStyle(
-                              color: Color(0xFF0B55A0),
+                              color: isDarkMode
+                                  ? Colors.white70
+                                  : const Color(0xFF0B55A0),
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                             ),
@@ -489,9 +515,13 @@ class _HarinaCafePageState extends State<HarinaCafePage> {
                             ),
                           ),
                           child: isSubmitting
-                              ? const CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
                                 )
                               : const Text(
                                   'Submit',

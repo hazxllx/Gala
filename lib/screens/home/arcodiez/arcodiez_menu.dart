@@ -12,8 +12,14 @@ class _MenuPageState extends State<MenuPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDarkMode ? const Color(0xFF121212) : Colors.white;
+    final containerColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final accentColor = const Color(0xFF0B55A0); 
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       body: Stack(
         children: [
           // Background Image
@@ -23,25 +29,28 @@ class _MenuPageState extends State<MenuPage> {
             right: 0,
             child: Container(
               height: 300,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 image: DecorationImage(
                   image: AssetImage('assets/images/menu1.png'),
                   fit: BoxFit.cover,
                 ),
               ),
+              child: Container(
+                color: Colors.black.withOpacity(isDarkMode ? 0.4 : 0.0),
+              ),
             ),
           ),
 
-          // White Container
+          // White/Dark Container
           Positioned(
             top: 200,
             left: 0,
             right: 0,
-            bottom: 30,
+            bottom: 0,
             child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: containerColor,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(50),
                   topRight: Radius.circular(50),
                 ),
@@ -59,84 +68,41 @@ class _MenuPageState extends State<MenuPage> {
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.bold,
                           fontSize: 24,
-                          color: Colors.black,
+                          color: textColor,
                         ),
                       ),
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
                     // Scrollable Categories
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
-                          categoryTab('Hot Non Coffee', 0),
-                          categoryTab('Cold Non Coffee', 1),
-                          categoryTab('Refreshment', 2),
+                          categoryTab('Hot Non Coffee', 0, textColor, accentColor),
+                          categoryTab('Cold Non Coffee', 1, textColor, accentColor),
+                          categoryTab('Refreshment', 2, textColor, accentColor),
                         ],
                       ),
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
                     Center(
                       child: Divider(
                         thickness: 1,
-                        color: const Color.fromARGB(255, 207, 207, 207),
+                        color: isDarkMode ? Colors.white24 : const Color.fromARGB(255, 207, 207, 207),
                       ),
                     ),
 
                     // Scrollable Grid Menu
                     Expanded(
                       child: GridView.count(
+                        padding: const EdgeInsets.only(top: 20, bottom: 20),
                         crossAxisCount: 2,
                         mainAxisSpacing: 20,
                         crossAxisSpacing: 20,
-                        childAspectRatio: 0.9,
-                        children: buildMenuItems(),
-                      ),
-                    ),
-
-                    // Next Button
-                    SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF1562A1), // Start color
-                            Color(0xFF0A426F), // End color
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                      ),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            if (selectedCategoryIndex < 2) {
-                              selectedCategoryIndex++;
-                            }
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          padding: EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: Text(
-                          'Next',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
+                        childAspectRatio: 0.85,
+                        children: buildMenuItems(textColor, accentColor, isDarkMode),
                       ),
                     ),
                   ],
@@ -145,27 +111,21 @@ class _MenuPageState extends State<MenuPage> {
             ),
           ),
 
-          // Cafe Name and Back Button
+          // Back Button
           Positioned(
-            top: 70,
-            left: 24,
+            top: 50,
+            left: 20,
             child: GestureDetector(
               onTap: () {
                 Navigator.pop(context);
               },
-              child: Icon(Icons.arrow_back, color: Colors.white),
-            ),
-          ),
-          Positioned(
-            top: 130,
-            left: 40,
-            child: Text(
-              'Arco Diez Menu',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.bold,
-                fontSize: 36,
-                color: Colors.white,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.arrow_back, color: Colors.white),
               ),
             ),
           ),
@@ -174,7 +134,7 @@ class _MenuPageState extends State<MenuPage> {
     );
   }
 
-  List<Widget> buildMenuItems() {
+  List<Widget> buildMenuItems(Color textColor, Color accentColor, bool isDarkMode) {
     if (selectedCategoryIndex == 0) {
       // Hot Non Coffee
       return [
@@ -182,26 +142,41 @@ class _MenuPageState extends State<MenuPage> {
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/tea_bag.png',
           'Tea Bags - ₱60',
           'Ask for availability',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
         buildMenuItem(
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/chocolate.png',
           'Chocolate Tablea - ₱90',
           'Batangas cacao + milk',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
         buildMenuItem(
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/lemon.png',
           'Lemonade - ₱100',
           'Kalamansi juice + hot water',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
         buildMenuItem(
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/coffee.png',
           'Iced Chocolate Latte - ₱130',
           'Chocolate powder + steamed milk',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
         buildMenuItem(
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/matcha.png',
           'Matcha Latte - ₱140',
           'Green tea matcha + steamed milk',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
       ];
     } else if (selectedCategoryIndex == 1) {
@@ -211,46 +186,73 @@ class _MenuPageState extends State<MenuPage> {
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/clatte.png',
           'Chocolate Latte - ₱150',
           'Chocolate Powder + Steamed Milk + Ice',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
         buildMenuItem(
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mlatte.png',
           'Matcha Latte - ₱160',
           'Green Tea Matcha + Steamed Milk + Ice',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
         buildMenuItem(
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mclatte.png',
           'Matcha Chocolate Latte - ₱160',
           'Green Tea Matcha + Chocolate Powder + Steamed Milk + Ice',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
         buildMenuItem(
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mslatte.png',
           'Strawberry Latte - ₱180',
           'Strawberry Puree + Steamed Milk + Ice',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
         buildMenuItem(
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mglatte.png',
           'Mango Latte - ₱180',
           'Mango Puree + Steamed Milk + Ice',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
         buildMenuItem(
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mslatte.png',
           'Matcha Strawberry - ₱190',
           'Green Tea Matcha + Strawberry Puree + Steamed Milk + Ice',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
         buildMenuItem(
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mm.png',
           'Matcha Mango - ₱190',
           'Green Tea Matcha + Mango Puree + Steamed Milk + Ice',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
         buildMenuItem(
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/blatte.png',
           'Banana Latte - ₱180',
           'Banana Puree + Steamed Milk + Ice',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
         buildMenuItem(
           'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_menu/mb.png',
           'Matcha Banana - ₱190',
           'Green Tea Matcha + Banana Puree + Steamed Milk + Ice',
+          textColor,
+          accentColor,
+          isDarkMode,
         ),
       ];
     } else {
@@ -260,7 +262,7 @@ class _MenuPageState extends State<MenuPage> {
   }
 
   // Category Tab Widget
-  Widget categoryTab(String title, int index) {
+  Widget categoryTab(String title, int index, Color textColor, Color accentColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: GestureDetector(
@@ -269,16 +271,23 @@ class _MenuPageState extends State<MenuPage> {
             selectedCategoryIndex = index;
           });
         },
-        child: Text(
-          title,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color:
-                selectedCategoryIndex == index
-                    ? Colors.black
-                    : Color.fromARGB(255, 201, 152, 80),
+        child: Container(
+          padding: const EdgeInsets.only(bottom: 4),
+          decoration: BoxDecoration(
+            border: selectedCategoryIndex == index
+                ? Border(bottom: BorderSide(color: accentColor, width: 2))
+                : null,
+          ),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              // When selected: textColor (White in Dark Mode, Black in Light Mode)
+              // When unselected: accentColor (Blue)
+              color: selectedCategoryIndex == index ? textColor : accentColor.withOpacity(0.7),
+            ),
           ),
         ),
       ),
@@ -286,7 +295,7 @@ class _MenuPageState extends State<MenuPage> {
   }
 
   // Menu Item Widget
-  Widget buildMenuItem(String imagePath, String title, String subtitle) {
+  Widget buildMenuItem(String imagePath, String title, String subtitle, Color textColor, Color accentColor, bool isDarkMode) {
     return GestureDetector(
       onTap: () {
         showDialog(
@@ -295,101 +304,103 @@ class _MenuPageState extends State<MenuPage> {
           builder: (BuildContext context) {
             return Dialog(
               elevation: 0,
-              backgroundColor: Colors.transparent,
-              insetPadding: EdgeInsets.symmetric(horizontal: 24),
-              child: Center(
-                child: Container(
-                  width: 300,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Close Button
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.close,
-                            size: 20,
-                            color: Colors.black,
-                          ),
-                          onPressed: () => Navigator.pop(context),
+              backgroundColor: isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                width: 300,
+                padding: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Close Button
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.close,
+                          size: 24,
+                          color: isDarkMode ? Colors.white70 : Colors.black,
                         ),
+                        onPressed: () => Navigator.pop(context),
                       ),
+                    ),
 
-                      // Network Image with padding
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            imagePath,
-                            height: 250,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                height: 250,
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                                  ),
+                    // Network Image with padding
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          imagePath,
+                          height: 250,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return SizedBox(
+                              height: 250,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  color: accentColor,
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
                                 ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                height: 250,
-                                color: Colors.grey[300],
-                                child: Icon(Icons.error, size: 50),
-                              );
-                            },
-                          ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 250,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.error, size: 50, color: Colors.grey),
+                            );
+                          },
                         ),
                       ),
+                    ),
 
-                      SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
-                      // Title
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          title,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                    // Title
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
                         ),
                       ),
+                    ),
 
-                      SizedBox(height: 6),
+                    const SizedBox(height: 8),
 
-                      // Subtitle
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          subtitle,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 14,
-                            color: Colors.grey[700],
-                          ),
+                    // Subtitle
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        subtitle,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
                         ),
                       ),
-
-                      SizedBox(height: 16),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -399,56 +410,59 @@ class _MenuPageState extends State<MenuPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Image.network(
-              imagePath,
-              width: double.infinity,
-              height: 120,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  height: 120,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.network(
+                imagePath,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    color: isDarkMode ? Colors.white10 : Colors.grey[100],
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: accentColor,
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
                     ),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  height: 120,
-                  color: Colors.grey[300],
-                  child: Icon(Icons.broken_image, size: 40),
-                );
-              },
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: isDarkMode ? Colors.white10 : Colors.grey[300],
+                    child: Icon(Icons.broken_image, size: 40, color: Colors.grey[600]),
+                  );
+                },
+              ),
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontFamily: 'Inter',
               fontWeight: FontWeight.bold,
-              fontSize: 11.3,
-              color: Colors.black,
+              fontSize: 13,
+              color: textColor,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             subtitle,
             maxLines: 2,
-            overflow: TextOverflow.visible,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 11,
-              color: Color.fromARGB(255, 201, 152, 80),
+              color: accentColor,
             ),
           ),
         ],

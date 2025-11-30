@@ -88,7 +88,6 @@ class _ProfilePageState extends State<ProfilePage> {
       final cafeCollections = ['cafes', 'bars', 'restaurants'];
       for (var collection in cafeCollections) {
         final collectionSnapshot = await FirebaseFirestore.instance.collection(collection).get();
-        
         for (var cafeDoc in collectionSnapshot.docs) {
           final ratingDoc = await FirebaseFirestore.instance
               .collection(collection)
@@ -134,7 +133,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   String _formatTimestamp(Timestamp? timestamp) {
     if (timestamp == null) return 'Recently';
-    
+
     final now = DateTime.now();
     final dateTime = timestamp.toDate();
     final difference = now.difference(dateTime);
@@ -161,6 +160,13 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final safePaddingTop = MediaQuery.of(context).padding.top;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerBg = isDark ? const Color(0xFF181A1B) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final labelColor = isDark ? Colors.grey[300] : Colors.grey[800];
+    final secondaryText = isDark ? Colors.grey[400] : Colors.black54;
+    final cardColor = isDark ? const Color(0xFF232528) : Colors.white;
+    final cardBorder = isDark ? Colors.grey[700]! : Colors.grey[200]!;
 
     final fullName = (firstName + ' ' + lastName).trim().isEmpty
         ? 'User Not Found'
@@ -207,6 +213,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       body: Stack(
         children: [
+          // background image
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -215,6 +222,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ),
+          // inner container
           Positioned(
             top: safePaddingTop + size.height * 0.18,
             left: 0,
@@ -226,9 +234,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 horizontal: size.width * 0.07,
                 vertical: size.height * 0.03,
               ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+              decoration: BoxDecoration(
+                color: containerBg,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
               ),
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -242,6 +250,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             style: TextStyle(
                               fontSize: size.width * 0.055,
                               fontWeight: FontWeight.bold,
+                              color: textColor,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -258,14 +267,11 @@ class _ProfilePageState extends State<ProfilePage> {
                                       currentUsername: fullName,
                                       currentProfileImagePath: photoUrl.isNotEmpty ? photoUrl : null,
                                       onProfileUpdated: (updatedUsername, _, updatedImagePath) async {
-                                        // Reload all user data from Firestore
                                         await _loadUserData();
                                       },
                                     ),
                                   ),
                                 );
-                                
-                                // Reload data after returning from edit page
                                 if (result == true) {
                                   await _loadUserData();
                                 }
@@ -294,7 +300,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               style: TextStyle(
                                 fontSize: size.width * 0.04,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
+                                color: labelColor,
                               ),
                             ),
                           ),
@@ -305,7 +311,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               username,
                               style: TextStyle(
                                 fontSize: size.width * 0.038,
-                                color: Colors.black87,
+                                color: textColor,
                               ),
                             ),
                           ),
@@ -316,7 +322,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               'Username',
                               style: TextStyle(
                                 fontSize: size.width * 0.035,
-                                color: Colors.black54,
+                                color: secondaryText,
                                 fontStyle: FontStyle.italic,
                               ),
                             ),
@@ -329,23 +335,24 @@ class _ProfilePageState extends State<ProfilePage> {
                               style: TextStyle(
                                 fontSize: size.width * 0.04,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
+                                color: labelColor,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          // --------- No SizedBox or gap here ---------
                           if (activities.isEmpty)
                             Container(
                               width: double.infinity,
-                              padding: EdgeInsets.symmetric(
-                                vertical: size.height * 0.03,
-                                horizontal: size.width * 0.04,
+                              padding: EdgeInsets.only(
+                                left: size.width * 0.04,
+                                right: size.width * 0.04,
+                                bottom: size.height * 0.03,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.grey[50],
+                                color: isDark ? const Color(0xFF222325) : Colors.grey[50],
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: Colors.grey[200]!,
+                                  color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
                                   width: 1,
                                 ),
                               ),
@@ -354,14 +361,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                   Icon(
                                     Icons.history,
                                     size: size.width * 0.08,
-                                    color: Colors.grey[400],
+                                    color: isDark ? Colors.grey[500] : Colors.grey[400],
                                   ),
                                   SizedBox(height: size.height * 0.01),
                                   Text(
                                     'No Activity yet',
                                     style: TextStyle(
                                       fontSize: size.width * 0.035,
-                                      color: Colors.black54,
+                                      color: secondaryText,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -370,7 +377,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     'Your recent activities will appear here',
                                     style: TextStyle(
                                       fontSize: size.width * 0.03,
-                                      color: Colors.grey[500],
+                                      color: isDark ? Colors.grey[600] : Colors.grey[500],
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
@@ -391,19 +398,21 @@ class _ProfilePageState extends State<ProfilePage> {
                                   margin: const EdgeInsets.only(bottom: 8),
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: cardColor,
                                     borderRadius: BorderRadius.circular(14),
                                     border: Border.all(
-                                      color: Colors.grey[200]!,
+                                      color: cardBorder,
                                       width: 1,
                                     ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.06),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
+                                    boxShadow: isDark
+                                        ? []
+                                        : [
+                                            BoxShadow(
+                                              color: Colors.black.withAlpha(16),
+                                              blurRadius: 6,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
                                   ),
                                   child: Row(
                                     children: [
@@ -417,7 +426,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                                   height: 65,
                                                   fit: BoxFit.cover,
                                                   errorBuilder: (context, error, stackTrace) {
-                                                    return _buildIconContainer(activity);
+                                                    return _buildIconContainer(activity, isDark);
                                                   },
                                                 )
                                               : Image.asset(
@@ -426,12 +435,12 @@ class _ProfilePageState extends State<ProfilePage> {
                                                   height: 65,
                                                   fit: BoxFit.cover,
                                                   errorBuilder: (context, error, stackTrace) {
-                                                    return _buildIconContainer(activity);
+                                                    return _buildIconContainer(activity, isDark);
                                                   },
                                                 ),
                                         )
                                       else
-                                        _buildIconContainer(activity),
+                                        _buildIconContainer(activity, isDark),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
@@ -439,9 +448,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                           children: [
                                             Text(
                                               activity['title'] as String,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w600,
+                                                color: textColor,
                                               ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
@@ -451,7 +461,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                               activity['subtitle'] as String,
                                               style: TextStyle(
                                                 fontSize: 13,
-                                                color: Colors.grey[600],
+                                                color: isDark ? Colors.grey[400] : Colors.grey[600],
                                               ),
                                             ),
                                             const SizedBox(height: 4),
@@ -459,7 +469,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                               _formatTimestamp(activity['timestamp'] as Timestamp?),
                                               style: TextStyle(
                                                 fontSize: 11,
-                                                color: Colors.grey[500],
+                                                color: isDark ? Colors.grey[500] : Colors.grey[500],
                                               ),
                                             ),
                                           ],
@@ -468,7 +478,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: (activity['color'] as Color).withValues(alpha: 0.1),
+                                          color: (activity['color'] as Color).withAlpha(30),
                                           borderRadius: BorderRadius.circular(10),
                                         ),
                                         child: Icon(
@@ -488,6 +498,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
             ),
           ),
+          // profile picture
           Positioned(
             top: safePaddingTop + size.height * 0.10,
             left: (size.width / 2) - (size.width * 0.12),
@@ -500,7 +511,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withAlpha(40),
                     blurRadius: 10,
                     offset: const Offset(0, 5),
                   ),
@@ -520,12 +531,12 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildIconContainer(Map<String, dynamic> activity) {
+  Widget _buildIconContainer(Map<String, dynamic> activity, bool isDark) {
     return Container(
       width: 65,
       height: 65,
       decoration: BoxDecoration(
-        color: (activity['color'] as Color).withValues(alpha: 0.1),
+        color: (activity['color'] as Color).withAlpha(30),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(

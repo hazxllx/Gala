@@ -1,7 +1,3 @@
-/// FULL UPDATED BLUISH RESORT PAGE WITH PMAQ-STYLE OPERATING HOURS
-/// (Operating Hours moved under "About")
-// ------------------------------------------------------------
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -77,8 +73,13 @@ class _BluishResortPageState extends State<BluishResortPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDarkMode ? const Color(0xFF121212) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final subTextColor = isDarkMode ? Colors.white70 : Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       body: Stack(
         children: [
           // ---------------- IMAGE CAROUSEL ----------------
@@ -145,9 +146,9 @@ class _BluishResortPageState extends State<BluishResortPage> {
             right: 0,
             bottom: 0,
             child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(50),
                   topRight: Radius.circular(50),
                 ),
@@ -158,22 +159,22 @@ class _BluishResortPageState extends State<BluishResortPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ABOUT
-                    const Text(
+                    Text(
                       'About',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
-                        color: Colors.black,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       'Create your best memories at Bluish Resort! Featuring a cafe, event venue, cottages, and rooms, this destination offers the perfect setting for relaxation and celebrations. For bookings and reservations, contact 09690260560.',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 12.8,
-                        color: Colors.black87,
+                        color: subTextColor,
                         height: 1.5,
                       ),
                     ),
@@ -182,31 +183,12 @@ class _BluishResortPageState extends State<BluishResortPage> {
                     // -------------------------------------------------
                     //        NEW BUSINESS HOURS TITLE + CARD
                     // -------------------------------------------------
-                    const Text(
-                      'Business Hours',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildOperatingHoursBluish(),
+                    _buildOperatingHoursBluish(isDarkMode),
                     const SizedBox(height: 30),
 
                     // TITLE: Entrance Rates
-                    const Text(
-                      'Entrance Rates',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    _buildEntranceRates(),
+                    // ENTRANCE RATES
+                    _buildEntranceRates(isDarkMode),
                     const SizedBox(height: 30),
 
                     // OPTIONS
@@ -215,18 +197,21 @@ class _BluishResortPageState extends State<BluishResortPage> {
                       'assets/icons/location.png',
                       'Go to Location and More Details',
                       () {},
+                      isDarkMode,
                     ),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/menu.png',
                       "View Bluish Resort's Amenities",
                       () {},
+                      isDarkMode,
                     ),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/star_filled.png',
                       'Give it a rate',
-                      () => _showRatingDialog(context),
+                      () => _showRatingDialog(context, isDarkMode),
+                      isDarkMode,
                     ),
                   ],
                 ),
@@ -308,121 +293,142 @@ class _BluishResortPageState extends State<BluishResortPage> {
   // ------------------------------------------------------------------
   // NEW OPERATING HOURS (MATCHING PMAQ DESIGN)
   // ------------------------------------------------------------------
-  Widget _buildOperatingHoursBluish() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E9F2), width: 1),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        children: [
-          // BLUE TOP BAR
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: const BoxDecoration(
-              color: Color(0xFF1556B1),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(18),
-                topRight: Radius.circular(18),
-              ),
-            ),
-            child: const Center(
-              child: Text(
-                'Open',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+  Widget _buildOperatingHoursBluish(bool isDarkMode) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Business Hours",
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            color: isDarkMode ? Colors.white : Colors.black,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+            border: isDarkMode
+                ? null
+                : Border.all(color: const Color(0xFFE5E9F2), width: 1),
+            boxShadow: [
+              if (!isDarkMode)
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // BLUE TOP BAR
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1556B1),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                ),
+                child: const Center(
+                  child: Text(
+                    'Open',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
 
-          // WHITE CONTENT
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(18),
-                bottomRight: Radius.circular(18),
+              // CONTENT
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                child: Column(
+                  children: [
+                    Text(
+                      'Open 24/7',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: isDarkMode
+                            ? Colors.white
+                            : const Color(0xFF0B1A2E),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Everyday',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        color: isDarkMode ? Colors.white70 : const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            child: Column(
-              children: const [
-                Text(
-                  'Open 24/7',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 21,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0B1A2E),
-                  ),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  'Everyday',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    color: Color(0xFF6B7280),
-                  ),
-                ),
-              ],
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   // ------------------------------------------------------------------
   // ENTRANCE RATES
   // ------------------------------------------------------------------
-  Widget _buildEntranceRates() {
+  Widget _buildEntranceRates(bool isDarkMode) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FC),
+        color: isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF7F8FC),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E9F2), width: 1),
+        border: isDarkMode
+            ? null
+            : Border.all(color: const Color(0xFFE5E9F2), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.pool, size: 20, color: Color(0xFF1556B1)),
-              SizedBox(width: 8),
+            children: [
+              const Icon(Icons.pool, size: 20, color: Color(0xFF1556B1)),
+              const SizedBox(width: 8),
               Text(
-                'Pool 1 & Pool 2 Access',
+                'Entrance Rates',
                 style: TextStyle(
                   fontFamily: 'Inter',
-                  fontSize: 17,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0B1A2E),
+                  color: isDarkMode ? Colors.white : const Color(0xFF0B1A2E),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          _buildRateRow('Daytime (7:00 AM - 5:00 PM)', '₱100/head'),
+          _buildRateRow('Daytime (7:00 AM - 5:00 PM)', '₱100/head', isDarkMode),
           const SizedBox(height: 12),
-          _buildRateRow('Night time (6:00 PM - 5:00 AM)', '₱150/head'),
+          _buildRateRow('Night time (6:00 PM - 5:00 AM)', '₱150/head', isDarkMode),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F4FD),
+              color: isDarkMode
+                  ? const Color(0xFF0D4776).withOpacity(0.3)
+                  : const Color(0xFFE8F4FD),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: const [
-                Icon(Icons.info_outline,
-                    size: 18, color: Color(0xFF1556B1)),
+                Icon(Icons.info_outline, size: 18, color: Color(0xFF1556B1)),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -443,28 +449,28 @@ class _BluishResortPageState extends State<BluishResortPage> {
     );
   }
 
-  Widget _buildRateRow(String time, String price) {
+  Widget _buildRateRow(String time, String price, bool isDarkMode) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
           child: Text(
             time,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF4A5568),
+              color: isDarkMode ? Colors.white70 : const Color(0xFF4A5568),
             ),
           ),
         ),
         Text(
           price,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Inter',
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1556B1),
+            color: isDarkMode ? Colors.white : const Color(0xFF1556B1),
           ),
         ),
       ],
@@ -479,6 +485,7 @@ class _BluishResortPageState extends State<BluishResortPage> {
     String imagePath,
     String text,
     VoidCallback onTap,
+    bool isDarkMode,
   ) {
     return GestureDetector(
       onTap: onTap,
@@ -487,15 +494,16 @@ class _BluishResortPageState extends State<BluishResortPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 10,
-                spreadRadius: 2,
-                offset: Offset(0, 5),
-              ),
+            boxShadow: [
+              if (!isDarkMode)
+                const BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                  offset: Offset(0, 5),
+                ),
             ],
           ),
           child: Row(
@@ -505,16 +513,19 @@ class _BluishResortPageState extends State<BluishResortPage> {
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: Colors.black,
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right,
-                  color: Colors.black45, size: 28),
+              Icon(
+                Icons.chevron_right,
+                color: isDarkMode ? Colors.white70 : Colors.black45,
+                size: 28,
+              ),
             ],
           ),
         ),
@@ -525,7 +536,7 @@ class _BluishResortPageState extends State<BluishResortPage> {
   // ------------------------------------------------------------------
   // RATING DIALOG
   // ------------------------------------------------------------------
-  void _showRatingDialog(BuildContext context) {
+  void _showRatingDialog(BuildContext context, bool isDarkMode) {
     int selected = 0;
     bool isSubmitting = false;
 
@@ -535,19 +546,20 @@ class _BluishResortPageState extends State<BluishResortPage> {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) => Dialog(
-            backgroundColor: const Color(0xFFF8F8FF),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            backgroundColor:
+                isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F8FF),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24)),
             child: Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Rate Bluish Resort',
+                  Text(
+                    'Rate $kResortTitle',
                     style: TextStyle(
-                      color: Color(0xFF0B55A0),
+                      color: isDarkMode ? Colors.white : const Color(0xFF0B55A0),
                       fontWeight: FontWeight.bold,
                       fontSize: 22,
                       letterSpacing: 0.5,
@@ -579,10 +591,12 @@ class _BluishResortPageState extends State<BluishResortPage> {
                           onPressed: isSubmitting
                               ? null
                               : () => Navigator.pop(dialogContext),
-                          child: const Text(
+                          child: Text(
                             'Cancel',
                             style: TextStyle(
-                              color: Color(0xFF0B55A0),
+                              color: isDarkMode
+                                  ? Colors.white70
+                                  : const Color(0xFF0B55A0),
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                               letterSpacing: 0.2,
@@ -630,8 +644,7 @@ class _BluishResortPageState extends State<BluishResortPage> {
                                 ? Colors.white
                                 : Colors.grey,
                             elevation: 0,
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(18),
                             ),

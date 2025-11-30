@@ -52,9 +52,12 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
 
     if (!isFavorited) {
       await favoritesDoc.set({
-        'imagePath': 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_diez.jpeg',
+        'imagePath':
+            'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_diez.jpeg',
         'subtitle': 'Km. 10 Pacol Rd',
         'rating': 5,
+        'type': 'Cafe',
+        'addedAt': FieldValue.serverTimestamp(),
       });
     } else {
       await favoritesDoc.delete();
@@ -67,8 +70,13 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDarkMode ? const Color(0xFF121212) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final subTextColor = isDarkMode ? Colors.white70 : Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       body: Stack(
         children: [
           Positioned(
@@ -80,7 +88,8 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
               width: double.infinity,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: NetworkImage('https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_diez.jpg'),
+                  image: NetworkImage(
+                      'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_diez.jpg'),
                   fit: BoxFit.cover,
                   colorFilter: ColorFilter.mode(
                     Colors.black.withOpacity(0.2),
@@ -96,9 +105,9 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
             right: 0,
             bottom: 0,
             child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(50),
                   topRight: Radius.circular(50),
                 ),
@@ -108,17 +117,17 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'About',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
-                        color: Colors.black,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       'Arco Diez Cafe is a cozy, family-friendly spot in Pacol, Naga City, serving farm-to-cup coffee and homemade dishes. '
                       'Committed to quality, transparency, and sustainability, the cafe values the hard work of coffee farmers while providing '
                       'a relaxing space for customers to enjoy great coffee and food.',
@@ -126,31 +135,12 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.normal,
                         fontSize: 11.8,
-                        color: Colors.black87,
+                        color: subTextColor,
                         height: 1.5,
                       ),
                     ),
                     const SizedBox(height: 24),
-                    const Text(
-                      'Business Hours',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    SizedBox(
-                      height: 105,
-                      child: Row(
-                        children: [
-                          _buildClosedBox(),
-                          const SizedBox(width: 16),
-                          _buildOpenBox(),
-                        ],
-                      ),
-                    ),
+                    _buildOperatingHoursCafe(isDarkMode),
                     const SizedBox(height: 24),
                     _buildOptionTileWithArrow(
                       context,
@@ -162,6 +152,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                           MaterialPageRoute(builder: (context) => RoutePage()),
                         );
                       },
+                      isDarkMode,
                     ),
                     _buildOptionTileWithArrow(
                       context,
@@ -175,6 +166,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                           ),
                         );
                       },
+                      isDarkMode,
                     ),
                     _buildOptionTileWithArrow(
                       context,
@@ -184,10 +176,12 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ReviewPage(cafeTitle: "Arco Diez Cafe"),
+                            builder: (context) =>
+                                ReviewPage(cafeTitle: "Arco Diez Cafe"),
                           ),
                         );
                       },
+                      isDarkMode,
                     ),
                   ],
                 ),
@@ -212,11 +206,11 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
                 ),
                 const SizedBox(height: 5),
                 Row(
-                  children: [
-                    const Icon(Icons.location_on, color: Colors.white, size: 18),
-                    const SizedBox(width: 4),
+                  children: const [
+                    Icon(Icons.location_on, color: Colors.white, size: 18),
+                    SizedBox(width: 4),
                     Expanded(
-                      child: const Text(
+                      child: Text(
                         'Km. 10 Pacol Rd, Naga City, 4400 Camarines Sur',
                         style: TextStyle(
                           fontFamily: 'Inter',
@@ -265,128 +259,153 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
     );
   }
 
-  Widget _buildClosedBox() {
-    return Flexible(
-      flex: 5,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 10,
-              spreadRadius: 2,
-              offset: Offset(0, 5),
-            ),
-          ],
+  // -------------------------------------------------------
+  // PMAQ STYLE BUSINESS HOURS
+  // -------------------------------------------------------
+  Widget _buildOperatingHoursCafe(bool isDarkMode) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Business Hours",
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+            color: isDarkMode ? Colors.white : Colors.black,
+          ),
         ),
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(15),
-                  topRight: Radius.circular(15),
+        const SizedBox(height: 18),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+            border: isDarkMode
+                ? null
+                : Border.all(color: const Color(0xFFE5E9F2), width: 1),
+            boxShadow: [
+              if (!isDarkMode)
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
                 ),
-              ),
-              child: const Center(
-                child: Text(
-                  'Closed',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+            ],
+          ),
+          child: Column(
+            children: [
+              // TOP BLUE BAR
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1556B1),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                ),
+                child: const Center(
+                  child: Text(
+                    'Open',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+
+              // CONTENT
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Text('Monday', style: _dayTextStyleHighlighted()),
-                    const SizedBox(height: 4),
-                    Text('Tuesday', style: _dayTextStyleHighlighted()),
+                    Column(
+                      children: [
+                        Text(
+                          '10:00 AM – 9:00 PM',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: isDarkMode
+                                ? Colors.white
+                                : const Color(0xFF0B1A2E),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Wed to Fri',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            color: isDarkMode
+                                ? Colors.white70
+                                : const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      height: 40,
+                      width: 1,
+                      color: isDarkMode ? Colors.white24 : const Color(0xFFE5E9F2),
+                    ),
+                    Column(
+                      children: [
+                        Text(
+                          '7:00 AM – 9:00 PM',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: isDarkMode
+                                ? Colors.white
+                                : const Color(0xFF0B1A2E),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Sat & Sun',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            color: isDarkMode
+                                ? Colors.white70
+                                : const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOpenBox() {
-    return Flexible(
-      flex: 7,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 10,
-              spreadRadius: 2,
-              offset: Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: const BoxDecoration(
-                color: Color.fromARGB(255, 10, 70, 144),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(15),
-                  topRight: Radius.circular(15),
+              // Closed Section
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? Colors.white10 : Colors.grey[100],
+                  borderRadius:
+                      const BorderRadius.vertical(bottom: Radius.circular(22)),
                 ),
-              ),
-              child: const Center(
-                child: Text(
-                  'Open',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                child: Center(
+                  child: Text(
+                    'Closed: Mon & Tue',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDarkMode ? Colors.white60 : Colors.grey[600],
+                    ),
                   ),
                 ),
               ),
-            ),
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('10AM - 9PM', style: _openTimeTextStyle()),
-                      const SizedBox(height: 4),
-                      Text('Wed to Fri', style: _dayTextStyleSmall()),
-                    ],
-                  ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('7AM - 9PM', style: _openTimeTextStyle()),
-                      const SizedBox(height: 4),
-                      Text('Sat & Sun', style: _dayTextStyleSmall()),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -395,6 +414,7 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
     String imagePath,
     String text,
     VoidCallback onTap,
+    bool isDarkMode,
   ) {
     return GestureDetector(
       onTap: onTap,
@@ -403,15 +423,16 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 10,
-                spreadRadius: 2,
-                offset: Offset(0, 5),
-              ),
+            boxShadow: [
+              if (!isDarkMode)
+                const BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                  offset: Offset(0, 5),
+                ),
             ],
           ),
           child: Row(
@@ -426,40 +447,23 @@ class _ArcoDiezPageState extends State<ArcoDiezPage> {
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: Colors.black,
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.black45, size: 28),
+              Icon(
+                Icons.chevron_right,
+                color: isDarkMode ? Colors.white70 : Colors.black45,
+                size: 28,
+              ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  TextStyle _dayTextStyleSmall() {
-    return const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Colors.black54);
-  }
-
-  TextStyle _openTimeTextStyle() {
-    return const TextStyle(
-      fontFamily: 'Inter',
-      fontWeight: FontWeight.bold,
-      fontSize: 13,
-    );
-  }
-
-  TextStyle _dayTextStyleHighlighted() {
-    return const TextStyle(
-      fontFamily: 'Inter',
-      fontSize: 13,
-      color: Colors.black,
-      fontWeight: FontWeight.w600,
     );
   }
 }

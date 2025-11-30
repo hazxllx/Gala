@@ -66,8 +66,13 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDarkMode ? const Color(0xFF121212) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final subTextColor = isDarkMode ? Colors.white70 : Colors.black87;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       body: Stack(
         children: [
           // Main Hero Image
@@ -98,9 +103,9 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
             right: 0,
             bottom: 0,
             child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(50),
                   topRight: Radius.circular(50),
                 ),
@@ -111,41 +116,29 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ABOUT
-                    const Text(
+                    Text(
                       'About',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
-                        color: Colors.black,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       'Bringing the quality & affordable product where absolute customer satisfaction is our highest priority',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 12.8,
-                        color: Colors.black87,
+                        color: subTextColor,
                         height: 1.5,
                       ),
                     ),
                     const SizedBox(height: 24),
 
                     // BUSINESS HOURS TITLE
-                    const Text(
-                      'Business Hours',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    // PMAQ STYLE CARD
-                    _buildOperatingHoursCafe(),
+                    _buildOperatingHoursCafe(isDarkMode),
 
                     const SizedBox(height: 24),
 
@@ -155,18 +148,21 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
                       'assets/icons/location.png',
                       'Go to Location and More Details',
                       () {},
+                      isDarkMode,
                     ),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/menu.png',
                       "View 8Tea Trip Café's Menu",
                       () {},
+                      isDarkMode,
                     ),
                     _buildOptionTileWithArrow(
                       context,
                       'assets/icons/star_filled.png',
                       'Give it a rate',
-                      () => _showRatingDialog(context),
+                      () => _showRatingDialog(context, isDarkMode),
+                      isDarkMode,
                     ),
                   ],
                 ),
@@ -248,67 +244,92 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
   // -------------------------------------------------------
   // PMAQ STYLE BUSINESS HOURS
   // -------------------------------------------------------
-  Widget _buildOperatingHoursCafe() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E9F2), width: 1),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        children: [
-          // TOP BLUE BAR
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: const BoxDecoration(
-              color: Color(0xFF1556B1),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(18),
-                topRight: Radius.circular(18),
-              ),
-            ),
-            child: const Center(
-              child: Text(
-                'Open',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+  Widget _buildOperatingHoursCafe(bool isDarkMode) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Business Hours",
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+            color: isDarkMode ? Colors.white : Colors.black,
+          ),
+        ),
+        const SizedBox(height: 18),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+            border: isDarkMode
+                ? null
+                : Border.all(color: const Color(0xFFE5E9F2), width: 1),
+            boxShadow: [
+              if (!isDarkMode)
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // TOP BLUE BAR
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1556B1),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                ),
+                child: const Center(
+                  child: Text(
+                    'Open',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
 
-          // CONTENT
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            child: Column(
-              children: const [
-                Text(
-                  '9:00 AM – 9:00 PM',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 21,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0B1A2E),
-                  ),
+              // CONTENT
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                child: Column(
+                  children: [
+                    Text(
+                      '9:00 AM – 9:00 PM',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 21,
+                        fontWeight: FontWeight.w700,
+                        color:
+                            isDarkMode ? Colors.white : const Color(0xFF0B1A2E),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Daily',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        color: isDarkMode
+                            ? Colors.white70
+                            : const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 6),
-                Text(
-                  'Daily',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    color: Color(0xFF6B7280),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -316,7 +337,12 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
   // MENU OPTION TILE
   // -------------------------------------------------------
   Widget _buildOptionTileWithArrow(
-      BuildContext context, String imagePath, String text, VoidCallback onTap) {
+    BuildContext context,
+    String imagePath,
+    String text,
+    VoidCallback onTap,
+    bool isDarkMode,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
@@ -324,15 +350,16 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 10,
-                spreadRadius: 2,
-                offset: Offset(0, 5),
-              ),
+            boxShadow: [
+              if (!isDarkMode)
+                const BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                  offset: Offset(0, 5),
+                ),
             ],
           ),
           child: Row(
@@ -342,15 +369,19 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: Colors.black,
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.black45, size: 28),
+              Icon(
+                Icons.chevron_right,
+                color: isDarkMode ? Colors.white70 : Colors.black45,
+                size: 28,
+              ),
             ],
           ),
         ),
@@ -361,7 +392,7 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
   // -------------------------------------------------------
   // STAR RATING DIALOG
   // -------------------------------------------------------
-  void _showRatingDialog(BuildContext context) {
+  void _showRatingDialog(BuildContext context, bool isDarkMode) {
     int selected = 0;
     bool isSubmitting = false;
 
@@ -371,7 +402,8 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) => Dialog(
-            backgroundColor: const Color(0xFFF8F8FF),
+            backgroundColor:
+                isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F8FF),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),
@@ -383,10 +415,10 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'Rate 8Tea Trip Café',
                     style: TextStyle(
-                      color: Color(0xFF0B55A0),
+                      color: isDarkMode ? Colors.white : const Color(0xFF0B55A0),
                       fontWeight: FontWeight.bold,
                       fontSize: 22,
                     ),
@@ -420,10 +452,12 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
                           onPressed: isSubmitting
                               ? null
                               : () => Navigator.pop(dialogContext),
-                          child: const Text(
+                          child: Text(
                             'Cancel',
                             style: TextStyle(
-                              color: Color(0xFF0B55A0),
+                              color: isDarkMode
+                                  ? Colors.white70
+                                  : const Color(0xFF0B55A0),
                               fontSize: 16,
                             ),
                           ),
@@ -439,12 +473,11 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
                                   final user =
                                       FirebaseAuth.instance.currentUser;
                                   if (user != null) {
-                                    final ratingRef =
-                                        FirebaseFirestore.instance
-                                            .collection('cafes')
-                                            .doc(kCafeTitle)
-                                            .collection('ratings')
-                                            .doc(user.uid);
+                                    final ratingRef = FirebaseFirestore.instance
+                                        .collection('cafes')
+                                        .doc(kCafeTitle)
+                                        .collection('ratings')
+                                        .doc(user.uid);
                                     await ratingRef
                                         .set({'rating': selected});
                                   }
@@ -456,8 +489,7 @@ class _EightTeaTripCafePageState extends State<EightTeaTripCafePage> {
                                       const SnackBar(
                                         content: Text(
                                             'Thanks for rating 8Tea Trip Café!'),
-                                        backgroundColor:
-                                            Color(0xFF0B55A0),
+                                        backgroundColor: Color(0xFF0B55A0),
                                       ),
                                     );
                                   }
