@@ -1,3 +1,4 @@
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:my_project/services/firebase_storage_service.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -7,11 +8,11 @@ import 'dart:convert';
 import 'dart:async';
 import 'dart:math'; // Required for bbox calculations
 import 'dart:io'; // For File
+import 'dart:ui'; // For ImageFilter
 // Firebase Imports
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Added Auth
 import 'package:image_picker/image_picker.dart';
-
 
 // --- CONFIG ---
 const String _AWS_REGION = 'ap-southeast-1';
@@ -26,23 +27,39 @@ class NearbyScreen extends StatefulWidget {
   State<NearbyScreen> createState() => _NearbyScreenState();
 }
 
-class _NearbyScreenState extends State<NearbyScreen> {
+class _NearbyScreenState extends State<NearbyScreen> with TickerProviderStateMixin {
   late final WebViewController _webViewController;
   
+  // Animation Controllers
+  late final AnimationController _slideInController;
+  late final AnimationController _pulseController;
+
   // State
   Position? _currentPosition;
   bool _isLoading = false;
   
+  // Default Location: Naga City, Camarines Sur
+  final LatLng _defaultCamSurLocation = LatLng(13.6139, 123.1853);
+
   // Filters
   final List<String> _categories = [
-    "Coffee", 
-    "Park", 
-    "Hotel", 
-    "Bank", 
-    "Restaurant",
-    "Gas Station"
+    "Cafes", 
+    "Resorts", 
+    "Parks", 
+    "Restaurant", 
+    "Bars"
   ];
-  String _selectedCategory = "Coffee";
+  
+  // Mapping for more accurate search terms
+  final Map<String, String> _categorySearchTerms = {
+    "Cafes": "Coffee Shop",
+    "Resorts": "Resort",
+    "Parks": "Park",
+    "Restaurant": "Restaurant", // Keeping generic, but filtered by context
+    "Bars": "Bar",
+  };
+
+  String _selectedCategory = "Cafes";
   double _radiusKm = 2.0; // Range: 1km to 10km
 
   // Selected Place Data
@@ -58,12 +75,26 @@ class _NearbyScreenState extends State<NearbyScreen> {
   @override
   void initState() {
     super.initState();
+    
+    // Initialize Animations
+    _slideInController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat(reverse: true);
+
     _initWebView();
   }
 
   @override
   void dispose() {
     _reviewController.dispose();
+    _slideInController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -85,14 +116,19 @@ class _NearbyScreenState extends State<NearbyScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (String url) {
+            // FIX: Immediately set map to Camarines Sur default
+            _webViewController.runJavaScript(
+              'if(map) map.jumpTo({center: [${_defaultCamSurLocation.longitude}, ${_defaultCamSurLocation.latitude}], zoom: 14});'
+            );
+            
             _getCurrentLocation();
+            _slideInController.forward(); // Start animation when map loads
           },
           onWebResourceError: (error) {
             debugPrint("Map Resource Error: ${error.description}");
           },
         ),
       )
-      // Make sure this matches your asset file name exactly
       ..loadFlutterAsset('assets/aws_map.html');
   }
 
@@ -102,6 +138,8 @@ class _NearbyScreenState extends State<NearbyScreen> {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       if (mounted) _showError("Location services disabled");
+      // Fallback to default search even if GPS off
+      _searchNearbyPlaces(useDefault: true);
       return;
     }
 
@@ -110,12 +148,13 @@ class _NearbyScreenState extends State<NearbyScreen> {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         if (mounted) _showError("Location permission denied");
+        // Fallback
+        _searchNearbyPlaces(useDefault: true);
         return;
       }
     }
 
     try {
-      // Changed to use LocationAccuracy.best for better pin accuracy
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.best,
       );
@@ -124,20 +163,28 @@ class _NearbyScreenState extends State<NearbyScreen> {
       
       setState(() => _currentPosition = position);
 
-      // Update map center using the unified function name
       _webViewController.runJavaScript(
         'updateStartLocation(${position.latitude}, ${position.longitude})',
       );
 
-      // Perform initial search
       _searchNearbyPlaces();
     } catch (e) {
       debugPrint("Error getting location: $e");
+      _searchNearbyPlaces(useDefault: true);
     }
   }
 
-  Future<void> _searchNearbyPlaces() async {
-    if (_currentPosition == null) return;
+  Future<void> _searchNearbyPlaces({bool useDefault = false}) async {
+    // Determine center point: User Position or Default CamSur
+    double lat, lon;
+    if (_currentPosition != null && !useDefault) {
+      lat = _currentPosition!.latitude;
+      lon = _currentPosition!.longitude;
+    } else {
+      lat = _defaultCamSurLocation.latitude;
+      lon = _defaultCamSurLocation.longitude;
+    }
+
     setState(() => _isLoading = true);
 
     final url = Uri.parse(
@@ -145,26 +192,23 @@ class _NearbyScreenState extends State<NearbyScreen> {
     );
 
     try {
-      // Calculate Bounding Box for filtering (approximate)
-      double lat = _currentPosition!.latitude;
-      double lon = _currentPosition!.longitude;
-      // 1 degree lat ~ 111km
       double latOffset = _radiusKm / 111.0;
-      // 1 degree lon ~ 111km * cos(lat)
       double lonOffset = _radiusKm / (111.0 * cos(lat * (pi / 180.0)));
 
       List<double> bbox = [
-        lon - lonOffset, // min Lon
-        lat - latOffset, // min Lat
-        lon + lonOffset, // max Lon
-        lat + latOffset, // max Lat
+        lon - lonOffset,
+        lat - latOffset,
+        lon + lonOffset,
+        lat + latOffset,
       ];
 
+      // Use mapped search term for better accuracy
+      final searchTerm = _categorySearchTerms[_selectedCategory] ?? _selectedCategory;
+
       final body = jsonEncode({
-        "Text": _selectedCategory,
-        // REMOVED BiasPosition to resolve API conflict with FilterBBox
+        "Text": searchTerm,
         "FilterBBox": bbox,
-        "MaxResults": 50, // Increased to catch more relevant places
+        "MaxResults": 50,
         "FilterCountries": ["PHL"], 
       });
 
@@ -186,17 +230,21 @@ class _NearbyScreenState extends State<NearbyScreen> {
           final pLat = geom[1];
           final pLon = geom[0];
           
-          final distMeters = Geolocator.distanceBetween(
-            lat,
-            lon,
-            pLat,
-            pLon,
-          );
+          final distMeters = Geolocator.distanceBetween(lat, lon, pLat, pLon);
 
-          // Double check radius (BBox is square, radius is circle)
-          if (distMeters <= (_radiusKm * 1000)) {
+          // Additional filtering for "Restaurant" to avoid junk matches
+          bool isValid = true;
+          if (_selectedCategory == "Restaurant") {
+             // Basic check: if categories are present, ensure it's actually food-related
+             // (Note: AWS Categories are optional list strings)
+             final cats = (place['Categories'] as List?)?.join(' ').toLowerCase() ?? "";
+             // If categories exist but don't mention food/restaurant/dining, maybe skip?
+             // For now, relying on the 'Text' search improvement is safer than aggressive filtering.
+          }
+
+          if (distMeters <= (_radiusKm * 1000) && isValid) {
             validPlaces.add({
-              'id': place['PlaceId'] ?? place['Label'], // Attempt to capture ID or use Label
+              'id': place['PlaceId'] ?? place['Label'],
               'label': place['Label'] ?? "Unknown Place",
               'lat': pLat,
               'lon': pLon,
@@ -206,7 +254,6 @@ class _NearbyScreenState extends State<NearbyScreen> {
           }
         }
 
-        // --- Safe JSON passing ---
         final jsonString = jsonEncode(validPlaces);
         final safePayload = jsonEncode(jsonString);
         _webViewController.runJavaScript('updatePlaces($safePayload)');
@@ -229,7 +276,6 @@ class _NearbyScreenState extends State<NearbyScreen> {
     
     if (fullName == "Anonymous") return fullName;
 
-    // Split name and mask parts: "John Doe" -> "J*** D***"
     List<String> parts = fullName.split(' ');
     return parts.map((part) {
       if (part.isEmpty) return "";
@@ -258,17 +304,14 @@ class _NearbyScreenState extends State<NearbyScreen> {
     setState(() => _isSubmittingReview = true);
 
     try {
-      // 1. Upload Images
       List<String> imageUrls = [];
       if (_reviewImages.isNotEmpty) {
         imageUrls = await FirebaseStorageService.uploadEstablishmentImages(_reviewImages);
       }
 
-      // 2. Get User Info
       final user = FirebaseAuth.instance.currentUser;
       final anonymizedName = _getAnonymizedName();
 
-      // 3. Save Review to Firestore
       await FirebaseFirestore.instance.collection('reviews').add({
         'place_label': _selectedPlace!['label'],
         'place_id': _selectedPlace!['id'],
@@ -277,10 +320,9 @@ class _NearbyScreenState extends State<NearbyScreen> {
         'images': imageUrls,
         'timestamp': FieldValue.serverTimestamp(),
         'user_id': user?.uid,
-        'user_name': anonymizedName, // Save the anonymized name
+        'user_name': anonymizedName,
       });
 
-      // 4. Reset Form & UI (Do NOT close the card)
       setState(() {
         _rating = 0;
         _reviewController.clear();
@@ -290,9 +332,12 @@ class _NearbyScreenState extends State<NearbyScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Review submitted successfully!")),
+          const SnackBar(
+            content: Text("Review submitted successfully!"),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Color(0xFF041D66),
+          ),
         );
-        // Do NOT close the card so user can see their review appear
       }
 
     } catch (e) {
@@ -306,7 +351,11 @@ class _NearbyScreenState extends State<NearbyScreen> {
 
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+      SnackBar(
+        content: Text(msg), 
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -314,7 +363,6 @@ class _NearbyScreenState extends State<NearbyScreen> {
     setState(() {
       _selectedPlace = place;
       _isCardVisible = true;
-      // Reset review state when opening a new place
       _rating = 0;
       _reviewController.clear();
       _reviewImages.clear();
@@ -328,106 +376,207 @@ class _NearbyScreenState extends State<NearbyScreen> {
     });
   }
 
+  // --- UI HELPER: Glass Card ---
+  Widget _buildGlassCard({required Widget child}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.9),
+                Colors.white.withOpacity(0.6),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.5)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              )
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           // 1. Map Layer
           WebViewWidget(controller: _webViewController),
 
-          // 2. Filter Bar (Top)
+          // 2. Filter Bar (Glassmorphism Slide-In)
           Positioned(
             top: 50,
-            left: 0,
-            right: 0,
-            child: Column(
-              children: [
-                // Category Chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: _categories.map((cat) {
-                      final isSelected = _selectedCategory == cat;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Text(cat),
-                          selected: isSelected,
-                          onSelected: (val) {
-                            if (val) {
-                              setState(() {
-                                _selectedCategory = cat;
-                                _closeCard();
-                              });
-                              _searchNearbyPlaces();
-                            }
-                          },
-                          selectedColor: Colors.redAccent,
-                          labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                // Radius Slider
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Text("Range: ${_radiusKm.toStringAsFixed(1)} km"),
-                      Expanded(
-                        child: Slider(
-                          value: _radiusKm,
-                          min: 1.0,
-                          max: 10.0,
-                          divisions: 9,
-                          activeColor: Colors.redAccent,
-                          onChanged: (val) {
-                            setState(() => _radiusKm = val);
-                          },
-                          onChangeEnd: (val) => _searchNearbyPlaces(),
-                        ),
+            left: 20,
+            right: 20,
+            child: SlideTransition(
+              position: Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero)
+                  .animate(CurvedAnimation(parent: _slideInController, curve: Curves.elasticOut)),
+              child: _buildGlassCard(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Categories
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Row(
+                        children: _categories.map((cat) {
+                          final isSelected = _selectedCategory == cat;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              child: ChoiceChip(
+                                label: Text(cat),
+                                selected: isSelected,
+                                onSelected: (val) {
+                                  if (val) {
+                                    setState(() {
+                                      _selectedCategory = cat;
+                                      _closeCard();
+                                    });
+                                    _searchNearbyPlaces();
+                                  }
+                                },
+                                selectedColor: const Color(0xFF041D66),
+                                backgroundColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  side: BorderSide(
+                                    color: isSelected ? Colors.transparent : Colors.grey.withOpacity(0.3),
+                                  ),
+                                ),
+                                labelStyle: TextStyle(
+                                  color: isSelected ? Colors.white : Colors.black87,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                                elevation: isSelected ? 4 : 0,
+                                shadowColor: Colors.black26,
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
-                    ],
-                  ),
+                    ),
+                    
+                    Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+
+                    // Radius Slider
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      child: Row(
+                        children: [
+                          Icon(Icons.radar_rounded, size: 20, color: Colors.grey[700]),
+                          const SizedBox(width: 12),
+                          Text(
+                            "${_radiusKm.toStringAsFixed(1)} km",
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          Expanded(
+                            child: SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                activeTrackColor: const Color(0xFF041D66),
+                                inactiveTrackColor: Colors.grey[300],
+                                thumbColor: const Color(0xFF041D66),
+                                overlayColor: const Color(0xFF041D66).withOpacity(0.2),
+                                trackHeight: 4,
+                              ),
+                              child: Slider(
+                                value: _radiusKm,
+                                min: 1.0,
+                                max: 10.0,
+                                divisions: 9,
+                                onChanged: (val) => setState(() => _radiusKm = val),
+                                onChangeEnd: (val) => _searchNearbyPlaces(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
 
-          // 3. Loading Indicator
+          // 3. GPS FAB (Pulsing)
+          Positioned(
+            bottom: 40,
+            right: 20,
+            child: GestureDetector(
+              onTap: _getCurrentLocation,
+              child: AnimatedBuilder(
+                animation: _pulseController,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: 1.0 + (_pulseController.value * 0.05),
+                    child: Container(
+                      width: 56, height: 56,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFF041D66), Color(0xFF0A2E85)]),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF041D66).withOpacity(0.4 + (_pulseController.value * 0.2)),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.my_location_rounded, color: Colors.white),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+
+          // 4. Loading Overlay (Blurred)
           if (_isLoading)
-            const Positioned(
-              top: 160,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: SizedBox(
-                  width: 30, 
-                  height: 30, 
-                  child: CircularProgressIndicator(color: Colors.redAccent, strokeWidth: 3),
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: Container(
+                  color: Colors.black.withOpacity(0.1),
+                  child: Center(
+                    child: _buildGlassCard(
+                      child: const Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(color: Color(0xFF041D66)),
+                            SizedBox(height: 16),
+                            Text("Finding nearby places...", style: TextStyle(fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
 
-          // 4. Slide-up Info Card
+          // 5. Slide-up Info Card
           if (_isCardVisible && _selectedPlace != null)
             DraggableScrollableSheet(
-              initialChildSize: 0.45, // Slightly taller for review inputs
-              minChildSize: 0.2,     
+              initialChildSize: 0.5,
+              minChildSize: 0.25,     
               maxChildSize: 0.95,    
               builder: (context, scrollController) {
                 final label = _selectedPlace!['label'] as String;
@@ -438,22 +587,22 @@ class _NearbyScreenState extends State<NearbyScreen> {
                 return Container(
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, spreadRadius: 2)],
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 40, spreadRadius: 2)],
                   ),
                   child: ListView(
                     controller: scrollController,
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(24),
                     children: [
                       // Drag Handle
                       Center(
                         child: Container(
                           width: 40,
-                          height: 5,
-                          margin: const EdgeInsets.only(bottom: 20),
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 24),
                           decoration: BoxDecoration(
                             color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
                       ),
@@ -461,101 +610,113 @@ class _NearbyScreenState extends State<NearbyScreen> {
                       // Header
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Text(
-                              name,
-                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.location_on, color: Colors.redAccent, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text("$distance m away", style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500)),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: _closeCard,
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: _closeCard,
+                              color: Colors.grey[800],
+                            ),
                           )
                         ],
                       ),
-                      const SizedBox(height: 8),
                       
-                      // Tags/Status
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.green[100],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              "Open Now",
-                              style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            "$distance m away",
-                            style: const TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 16),
-                      
-                      // Address
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.location_on, color: Colors.redAccent, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(address, style: const TextStyle(fontSize: 16))),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      const Divider(),
+                      Text(address, style: TextStyle(fontSize: 16, color: Colors.grey[800], height: 1.4)),
+                      const SizedBox(height: 24),
+                      const Divider(height: 1),
+                      const SizedBox(height: 24),
 
                       // --- RATE & REVIEW SECTION ---
                       const Text(
                         "Rate & Review",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 16),
                       
                       // Star Rating
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(5, (index) {
-                          return IconButton(
-                            onPressed: () {
-                              setState(() => _rating = index + 1);
-                            },
-                            icon: Icon(
-                              index < _rating ? Icons.star : Icons.star_border,
-                              color: Colors.amber,
-                              size: 32,
-                            ),
-                          );
-                        }),
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(5, (index) {
+                            return GestureDetector(
+                              onTap: () => setState(() => _rating = index + 1),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                child: Icon(
+                                  index < _rating ? Icons.star_rounded : Icons.star_border_rounded,
+                                  color: Colors.amber[700],
+                                  size: 36,
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
                       ),
+                      const SizedBox(height: 16),
                       
                       // Comment Input
                       TextField(
                         controller: _reviewController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: "Share your experience...",
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.all(16),
                         ),
                         maxLines: 3,
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 16),
 
                       // Image Picker Row
                       Row(
                         children: [
-                          OutlinedButton.icon(
+                          TextButton.icon(
                             onPressed: _pickImage,
-                            icon: const Icon(Icons.camera_alt),
+                            icon: const Icon(Icons.add_a_photo_rounded),
                             label: const Text("Add Photo"),
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFF041D66),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              backgroundColor: const Color(0xFF041D66).withOpacity(0.1),
+                            ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: SizedBox(
                               height: 50,
@@ -566,8 +727,17 @@ class _NearbyScreenState extends State<NearbyScreen> {
                                   return Padding(
                                     padding: const EdgeInsets.only(right: 8),
                                     child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(4),
-                                      child: Image.file(_reviewImages[i], width: 50, height: 50, fit: BoxFit.cover),
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Stack(
+                                        children: [
+                                          Image.file(_reviewImages[i], width: 50, height: 50, fit: BoxFit.cover),
+                                          Positioned.fill(
+                                            child: Container(
+                                              decoration: BoxDecoration(border: Border.all(color: Colors.black12)),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   );
                                 },
@@ -576,85 +746,91 @@ class _NearbyScreenState extends State<NearbyScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 24),
 
                       // Submit Button
                       SizedBox(
                         width: double.infinity,
+                        height: 50,
                         child: ElevatedButton(
                           onPressed: _isSubmittingReview ? null : _submitReview,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
+                            backgroundColor: const Color(0xFF041D66),
                             foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 4,
+                            shadowColor: const Color(0xFF041D66).withOpacity(0.4),
                           ),
                           child: _isSubmittingReview 
-                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text("Post Review"),
+                            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text("Post Review", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
                       ),
 
-                      const SizedBox(height: 20),
-                      const Divider(),
+                      const SizedBox(height: 32),
                       
                       // Recent Reviews Title
-                      const Text(
-                        "Recent Reviews",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      Row(
+                        children: [
+                          const Icon(Icons.comment_rounded, size: 20, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Recent Reviews",
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[800]),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 16),
                       
                       // Realtime Reviews List
                       StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
                             .collection('reviews')
-                            .snapshots(), // FIX: Simple query to avoid index errors (Rule 2)
+                            .snapshots(),
                         builder: (context, snapshot) {
-                          if (snapshot.hasError) {
-                            return const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text("Unable to load reviews."),
-                            );
-                          }
+                          if (snapshot.hasError) return const Text("Unable to load reviews.");
                           if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
+                            return const Center(child: Padding(
+                              padding: EdgeInsets.all(20.0),
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ));
                           }
 
-                          // Client-side Filtering & Sorting
                           final allDocs = snapshot.data?.docs ?? [];
-                          
-                          // Filter by current place label
                           final docs = allDocs.where((doc) {
                             final data = doc.data() as Map<String, dynamic>;
                             return data['place_label'] == label;
                           }).toList();
 
-                          // Sort by timestamp descending (newest first)
                           docs.sort((a, b) {
                             final dataA = a.data() as Map<String, dynamic>;
                             final dataB = b.data() as Map<String, dynamic>;
-                            // Handle null timestamps (e.g. pending writes)
                             final timeA = (dataA['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
                             final timeB = (dataB['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
                             return timeB.compareTo(timeA);
                           });
                           
                           if (docs.isEmpty) {
-                            return const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 20),
-                              child: Center(
-                                child: Text("No reviews yet. Be the first!", style: TextStyle(color: Colors.grey)),
+                            return Center(
+                              child: Column(
+                                children: [
+                                  Icon(Icons.rate_review_outlined, size: 48, color: Colors.grey[300]),
+                                  const SizedBox(height: 8),
+                                  Text("No reviews yet. Be the first!", style: TextStyle(color: Colors.grey[500])),
+                                ],
                               ),
                             );
                           }
 
-                          return ListView.builder(
+                          return ListView.separated(
                             shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(), // Important inside parent ScrollView
+                            physics: const NeverScrollableScrollPhysics(),
                             itemCount: docs.length,
+                            separatorBuilder: (_, __) => Divider(height: 32, color: Colors.grey[100]),
                             itemBuilder: (context, index) {
                               final data = docs[index].data() as Map<String, dynamic>;
                               return _buildReviewItem(
-                                data['user_name'] ?? "Anonymous", // Use saved anonymized name
+                                data['user_name'] ?? "Anonymous",
                                 data['rating'] ?? 0, 
                                 data['comment'] ?? ""
                               );
@@ -675,42 +851,48 @@ class _NearbyScreenState extends State<NearbyScreen> {
   }
 
   Widget _buildReviewItem(String user, int rating, String comment) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            backgroundColor: Colors.grey[200],
-            child: Text(user.isNotEmpty ? user[0] : "?", style: const TextStyle(color: Colors.black)),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 40, height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0xFF041D66).withOpacity(0.1),
+            shape: BoxShape.circle,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(user, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    const Spacer(),
-                    Row(
-                      children: List.generate(5, (index) {
-                        return Icon(
-                          index < rating ? Icons.star : Icons.star_border,
-                          size: 16,
-                          color: Colors.amber,
-                        );
-                      }),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(comment),
-              ],
+          child: Center(
+            child: Text(
+              user.isNotEmpty ? user[0].toUpperCase() : "?", 
+              style: const TextStyle(color: Color(0xFF041D66), fontWeight: FontWeight.bold)
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(user, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Row(
+                    children: List.generate(5, (index) {
+                      return Icon(
+                        index < rating ? Icons.star_rounded : Icons.star_border_rounded,
+                        size: 16,
+                        color: Colors.amber[700],
+                      );
+                    }),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(comment, style: TextStyle(color: Colors.grey[700], height: 1.4)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

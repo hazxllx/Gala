@@ -41,16 +41,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    pili.CafePage(locationName: locationName),
+                builder: (context) => pili.CafePage(locationName: locationName),
               ),
             );
           } else {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    naga.CafePage(locationName: locationName),
+                builder: (context) => naga.CafePage(locationName: locationName),
               ),
             );
           }
@@ -117,8 +115,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    bars.BarsPage(locationName: locationName),
+                builder: (context) => bars.BarsPage(locationName: locationName),
               ),
             );
           } else {
@@ -138,12 +135,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
     _searchController.addListener(() {
       final query = _searchController.text.toLowerCase();
       setState(() {
-        filteredCategories = allCategories
-            .where(
-              (cat) =>
-                  cat['name'].toString().toLowerCase().contains(query),
-            )
-            .toList();
+        filteredCategories =
+            allCategories
+                .where(
+                  (cat) => cat['name'].toString().toLowerCase().contains(query),
+                )
+                .toList();
       });
     });
   }
@@ -152,17 +149,15 @@ class _CategoryScreenState extends State<CategoryScreen> {
     setState(() {
       if (sortType == 'A-Z') {
         filteredCategories.sort(
-          (a, b) => a['name']
-              .toString()
-              .toLowerCase()
-              .compareTo(b['name'].toString().toLowerCase()),
+          (a, b) => a['name'].toString().toLowerCase().compareTo(
+            b['name'].toString().toLowerCase(),
+          ),
         );
       } else if (sortType == 'Z-A') {
         filteredCategories.sort(
-          (a, b) => b['name']
-              .toString()
-              .toLowerCase()
-              .compareTo(a['name'].toString().toLowerCase()),
+          (a, b) => b['name'].toString().toLowerCase().compareTo(
+            a['name'].toString().toLowerCase(),
+          ),
         );
       }
     });
@@ -173,7 +168,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
     final titleColor = isDark ? Colors.white : const Color(0xFF2D3436);
-    final cardColor = isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA);
+    final cardColor =
+        isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA);
 
     showDialog(
       context: context,
@@ -209,7 +205,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     Expanded(
                       child: Text(
                         "Transport & Fare",
-                        style: TextStyle( // Replaced GoogleFonts with TextStyle
+                        style: TextStyle(
+                          // Replaced GoogleFonts with TextStyle
                           fontSize: 22,
                           fontWeight: FontWeight.bold, // Bold for emphasis
                           color: titleColor,
@@ -232,7 +229,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   cardColor: cardColor,
                   titleColor: titleColor,
                 ),
-                
+
                 const SizedBox(height: 16),
 
                 // Jeep Section
@@ -259,7 +256,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
+                      backgroundColor:
+                          isDark
+                              ? Colors.white.withOpacity(0.05)
+                              : Colors.grey[100],
                     ),
                     child: Text(
                       "Close",
@@ -307,7 +307,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: TextStyle( // Replaced GoogleFonts with TextStyle
+                style: TextStyle(
+                  // Replaced GoogleFonts with TextStyle
                   fontSize: 18,
                   color: titleColor,
                   fontWeight: FontWeight.bold,
@@ -367,14 +368,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
             // SEARCH BAR
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
                 color: cardColor,
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                  color:
-                      isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+                  color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
                   width: 1,
                 ),
                 boxShadow: [
@@ -392,8 +391,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   Expanded(
                     child: TextField(
                       controller: _searchController,
-                      style:
-                          TextStyle(color: textColor, fontSize: 16),
+                      style: TextStyle(color: textColor, fontSize: 16),
                       decoration: InputDecoration(
                         hintText: "Search categories...",
                         hintStyle: TextStyle(
@@ -401,8 +399,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           fontSize: 16,
                         ),
                         border: InputBorder.none,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -415,8 +414,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           color: Colors.grey[300],
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(Icons.close,
-                            size: 16, color: Colors.grey[600]),
+                        child: Icon(
+                          Icons.close,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
                       ),
                     ),
                 ],
@@ -453,31 +455,34 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  itemBuilder: (BuildContext context) => const [
-                    PopupMenuItem<String>(
-                      value: 'A-Z',
-                      child: Row(
-                        children: [
-                          Icon(Icons.sort_by_alpha, size: 16),
-                          SizedBox(width: 8),
-                          Text('Sort A–Z'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'Z-A',
-                      child: Row(
-                        children: [
-                          Icon(Icons.sort_by_alpha, size: 16),
-                          SizedBox(width: 8),
-                          Text('Sort Z–A'),
-                        ],
-                      ),
-                    ),
-                  ],
+                  itemBuilder:
+                      (BuildContext context) => const [
+                        PopupMenuItem<String>(
+                          value: 'A-Z',
+                          child: Row(
+                            children: [
+                              Icon(Icons.sort_by_alpha, size: 16),
+                              SizedBox(width: 8),
+                              Text('Sort A–Z'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'Z-A',
+                          child: Row(
+                            children: [
+                              Icon(Icons.sort_by_alpha, size: 16),
+                              SizedBox(width: 8),
+                              Text('Sort Z–A'),
+                            ],
+                          ),
+                        ),
+                      ],
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.blue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -511,47 +516,48 @@ class _CategoryScreenState extends State<CategoryScreen> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: filteredCategories.map((category) {
-                  final String name = category['name'] as String;
+                children:
+                    filteredCategories.map((category) {
+                      final String name = category['name'] as String;
 
-                  final Color accent = name == 'Cafes'
-                      ? (isDarkMode
-                          ? const Color.fromARGB(255, 244, 194, 171)
-                          : const Color.fromARGB(255, 184, 101, 71))
-                      : name == 'Bars'
-                          ? (isDarkMode
-                              ? const Color.fromARGB(255, 149, 239, 167)
-                              : const Color.fromARGB(255, 31, 166, 35))
-                          : name == 'Beach'
+                      final Color accent =
+                          name == 'Cafes'
+                              ? (isDarkMode
+                                  ? const Color.fromARGB(255, 244, 194, 171)
+                                  : const Color.fromARGB(255, 184, 101, 71))
+                              : name == 'Bars'
+                              ? (isDarkMode
+                                  ? const Color.fromARGB(255, 149, 239, 167)
+                                  : const Color.fromARGB(255, 31, 166, 35))
+                              : name == 'Beach'
                               ? (isDarkMode
                                   ? const Color.fromARGB(255, 162, 208, 255)
                                   : const Color(0xFF1A73E8))
                               : name == 'Parks'
-                                  ? (isDarkMode
-                                      ? const Color.fromARGB(255, 176, 231, 185)
-                                      : const Color(0xFF2E7D32))
-                                  : (isDarkMode
-                                      ? const Color.fromARGB(255, 174, 151, 255)
-                                      : const Color.fromARGB(255, 44, 13, 98));
+                              ? (isDarkMode
+                                  ? const Color.fromARGB(255, 176, 231, 185)
+                                  : const Color(0xFF2E7D32))
+                              : (isDarkMode
+                                  ? const Color.fromARGB(255, 174, 151, 255)
+                                  : const Color.fromARGB(255, 44, 13, 98));
 
-                  return Row(
-                    children: [
-                      CategoryCard(
-                        image: category['image'] as String,
-                        name: name,
-                        onTap: () {
-                          if (category.containsKey('onTap')) {
-                            category['onTap'](
-                                context, widget.locationName);
-                          }
-                        },
-                        isDarkMode: isDarkMode,
-                        textColor: accent,
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                  );
-                }).toList(),
+                      return Row(
+                        children: [
+                          CategoryCard(
+                            image: category['image'] as String,
+                            name: name,
+                            onTap: () {
+                              if (category.containsKey('onTap')) {
+                                category['onTap'](context, widget.locationName);
+                              }
+                            },
+                            isDarkMode: isDarkMode,
+                            textColor: accent,
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                      );
+                    }).toList(),
               ),
             ),
 
@@ -569,9 +575,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
             const SizedBox(height: 16),
             const SizedBox(height: 8),
             ActionButton(
-                icon: 'assets/nearby.png',
-                label: "Find nearby places",
-                isDarkMode: isDarkMode),
+              icon: 'assets/nearby.png',
+              label: "Find nearby places",
+              isDarkMode: isDarkMode,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const NearbyScreen()),
+                );
+              },
+            ),
             const SizedBox(height: 12),
             ActionButton(
               icon: 'assets/directions.png',
@@ -585,7 +598,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
               },
             ),
             const SizedBox(height: 12),
-            
+
             // --- CHECK FARE BUTTON ---
             ActionButton(
               icon: 'assets/fare.png',
@@ -598,7 +611,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                          'Fare info available for Naga only. Current: ${widget.locationName}'),
+                        'Fare info available for Naga only. Current: ${widget.locationName}',
+                      ),
                       backgroundColor: Colors.orange,
                     ),
                   );
@@ -654,8 +668,7 @@ class _CategoryCardState extends State<CategoryCard>
           borderRadius: BorderRadius.circular(16),
           color: widget.isDarkMode ? Colors.grey[900] : Colors.white,
           border: Border.all(
-            color:
-                widget.isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+            color: widget.isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
             width: 1,
           ),
           boxShadow: [
@@ -771,8 +784,7 @@ class ActionButton extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(Icons.arrow_forward_ios,
-                size: 16, color: Colors.grey[500]),
+            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[500]),
           ],
         ),
       ),
