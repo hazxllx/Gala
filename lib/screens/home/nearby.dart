@@ -56,22 +56,23 @@ class _NearbyScreenState extends State<NearbyScreen> with TickerProviderStateMix
     "Bars"
   ];
   
-  // Mapping for more accurate search terms
+  // Mapping for broad search terms to get enough results
   final Map<String, String> _categorySearchTerms = {
     "Cafes": "Coffee",
     "Resorts": "Resort",
     "Parks": "Park",
-    "Restaurant": "Food", // Changed to 'Food' to catch places like 'Bistro', 'Grill', etc.
+    "Restaurant": "Restaurant", 
     "Bars": "Bar",
   };
 
-  // Strict Category Filters (Esri Categories) to remove irrelevant stores
-  final Map<String, List<String>> _awsCategoryFilters = {
-    "Cafes": ["Coffee Shop"],
-    "Resorts": ["Resort", "Hotel"],
-    "Parks": ["Park", "Recreation"],
-    "Restaurant": ["Restaurant"], // Strictly only places categorized as Restaurants
-    "Bars": ["Bar", "Nightlife"],
+  // Client-side keywords to strictly filter the results
+  // We check if the returned 'Categories' list contains partial matches to these
+  final Map<String, List<String>> _clientSideCategoryKeywords = {
+    "Cafes": ["coffee", "cafe", "tea", "bakery"],
+    "Resorts": ["resort", "hotel", "inn", "guest house"],
+    "Parks": ["park", "garden", "recreation", "plaza", "playground"],
+    "Restaurant": ["restaurant", "dining", "bistro", "grill", "eatery", "diner", "steakhouse", "pizza"], 
+    "Bars": ["bar", "pub", "nightlife", "club", "lounge", "tavern"],
   };
 
   String _selectedCategory = "Cafes";
@@ -217,15 +218,13 @@ class _NearbyScreenState extends State<NearbyScreen> with TickerProviderStateMix
         lat + latOffset,
       ];
 
-      // Use mapped search term for better accuracy (e.g. "Food" instead of "Restaurant")
       final searchTerm = _categorySearchTerms[_selectedCategory] ?? _selectedCategory;
-      // Use strict category filter to remove irrelevant stores
-      final categoryFilter = _awsCategoryFilters[_selectedCategory];
+      final requiredKeywords = _clientSideCategoryKeywords[_selectedCategory] ?? [];
 
       final body = jsonEncode({
         "Text": searchTerm,
         "FilterBBox": bbox,
-        "FilterCategories": categoryFilter, // NEW: Strict filtering
+        // Removed FilterCategories to prevent API errors with HERE DataSource
         "MaxResults": 50,
         "FilterCountries": ["PHL"], 
       });
@@ -250,7 +249,23 @@ class _NearbyScreenState extends State<NearbyScreen> with TickerProviderStateMix
           
           final distMeters = Geolocator.distanceBetween(lat, lon, pLat, pLon);
 
-          if (distMeters <= (_radiusKm * 1000)) {
+          // CLIENT-SIDE FILTERING
+          // Check if place categories match our strict keywords
+          // This removes "Store" when searching for "Restaurant" if it lacks food-related tags
+          bool isCategoryMatch = false;
+          final placeCategories = (place['Categories'] as List?)?.map((e) => e.toString().toLowerCase()).toList() ?? [];
+          
+          // Also check label for keywords if categories are missing/sparse
+          final labelLower = (place['Label'] as String? ?? "").toLowerCase();
+
+          for (final keyword in requiredKeywords) {
+            if (placeCategories.any((cat) => cat.contains(keyword)) || labelLower.contains(keyword)) {
+              isCategoryMatch = true;
+              break;
+            }
+          }
+
+          if (distMeters <= (_radiusKm * 1000) && isCategoryMatch) {
             validPlaces.add({
               'id': place['PlaceId'] ?? place['Label'],
               'label': place['Label'] ?? "Unknown Place",
