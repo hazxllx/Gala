@@ -1,4 +1,3 @@
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:my_project/services/firebase_storage_service.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -19,6 +18,13 @@ const String _AWS_REGION = 'ap-southeast-1';
 const String _PLACE_INDEX = 'MyPlaceIndex';
 const String _API_KEY =
     'v1.public.eyJqdGkiOiJmNjYzMGVlYi0xNzA2LTQxNDItYWQyYy1jYzMzNTc0NGM0ZmIifQg38P6cE6L4sb71GcGuteb40sqtqQlariMJDviQkWwltWUwfUEc8rSPmUo3vtOHGEL0U0z9vpQBeVbdNfZZ886jGXhNY9Kc6xdNykSCuqleZ2gVOgb6YxLay0F9wTr2d9Uzv5wawpQEfhucGX8y9trnEAm68wSvCorCGAFlPMOsW2MAzEEMMsKpFMZ6Cf3rTO_v-_YHLniGzuWRiID0tY_d2pJBo9egY6QeYFNI-srp2gMRlXoqzHxbBoCNVDSxwSMH7oEgAIvEso8-Cb3iQ-puWGftX8-kQ3uoEUkHXPiTlGksY72Hi9fkUkC20KeOvCX-RZ9RL2PIb_xjSEn89Ec.MzRjYzZmZGUtZmY3NC00NDZiLWJiMTktNTc4YjUxYTFlOGZi';
+
+// --- HELPER CLASSES ---
+class LatLng {
+  final double latitude;
+  final double longitude;
+  LatLng(this.latitude, this.longitude);
+}
 
 class NearbyScreen extends StatefulWidget {
   const NearbyScreen({super.key});
@@ -52,11 +58,20 @@ class _NearbyScreenState extends State<NearbyScreen> with TickerProviderStateMix
   
   // Mapping for more accurate search terms
   final Map<String, String> _categorySearchTerms = {
-    "Cafes": "Coffee Shop",
+    "Cafes": "Coffee",
     "Resorts": "Resort",
     "Parks": "Park",
-    "Restaurant": "Restaurant", // Keeping generic, but filtered by context
+    "Restaurant": "Food", // Changed to 'Food' to catch places like 'Bistro', 'Grill', etc.
     "Bars": "Bar",
+  };
+
+  // Strict Category Filters (Esri Categories) to remove irrelevant stores
+  final Map<String, List<String>> _awsCategoryFilters = {
+    "Cafes": ["Coffee Shop"],
+    "Resorts": ["Resort", "Hotel"],
+    "Parks": ["Park", "Recreation"],
+    "Restaurant": ["Restaurant"], // Strictly only places categorized as Restaurants
+    "Bars": ["Bar", "Nightlife"],
   };
 
   String _selectedCategory = "Cafes";
@@ -202,12 +217,15 @@ class _NearbyScreenState extends State<NearbyScreen> with TickerProviderStateMix
         lat + latOffset,
       ];
 
-      // Use mapped search term for better accuracy
+      // Use mapped search term for better accuracy (e.g. "Food" instead of "Restaurant")
       final searchTerm = _categorySearchTerms[_selectedCategory] ?? _selectedCategory;
+      // Use strict category filter to remove irrelevant stores
+      final categoryFilter = _awsCategoryFilters[_selectedCategory];
 
       final body = jsonEncode({
         "Text": searchTerm,
         "FilterBBox": bbox,
+        "FilterCategories": categoryFilter, // NEW: Strict filtering
         "MaxResults": 50,
         "FilterCountries": ["PHL"], 
       });
@@ -232,17 +250,7 @@ class _NearbyScreenState extends State<NearbyScreen> with TickerProviderStateMix
           
           final distMeters = Geolocator.distanceBetween(lat, lon, pLat, pLon);
 
-          // Additional filtering for "Restaurant" to avoid junk matches
-          bool isValid = true;
-          if (_selectedCategory == "Restaurant") {
-             // Basic check: if categories are present, ensure it's actually food-related
-             // (Note: AWS Categories are optional list strings)
-             final cats = (place['Categories'] as List?)?.join(' ').toLowerCase() ?? "";
-             // If categories exist but don't mention food/restaurant/dining, maybe skip?
-             // For now, relying on the 'Text' search improvement is safer than aggressive filtering.
-          }
-
-          if (distMeters <= (_radiusKm * 1000) && isValid) {
+          if (distMeters <= (_radiusKm * 1000)) {
             validPlaces.add({
               'id': place['PlaceId'] ?? place['Label'],
               'label': place['Label'] ?? "Unknown Place",
