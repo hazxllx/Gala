@@ -1,31 +1,59 @@
-# Flutter
+# ============================================
+# FLUTTER (Generated & Build Artifacts)
+# ============================================
 build/
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
 android/local.properties
+.pub-cache/
+.packages
 
-# IDE
+# Flutter plugin registrants (auto-generated)
+**/GeneratedPluginRegistrant.*
+ios/Flutter/ephemeral/
+macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
+
+# ============================================
+# IDE / EDITOR
+# ============================================
 .idea/
 .vscode/
+*.iml
 
-# Logs
+# ============================================
+# LOGS
+# ============================================
 *.log
 
-# Other
+# ============================================
+# OPTIONAL: Lockfile (for apps you may want to ignore it)
 pubspec.lock
 
+# ============================================
+# ANDROID
+# ============================================
+android/.gradle/
+*.keystore
+*.jks
+
+# ============================================
+# AMPLIFY (AUTO-GENERATED — DO NOT EDIT)
+# ============================================
 #amplify-do-not-edit-begin
-amplify/\#current-cloud-backend
+amplify/#current-cloud-backend
 amplify/.config/local-*
 amplify/logs
 amplify/mock-data
 amplify/mock-api-resources
 amplify/backend/amplify-meta.json
 amplify/backend/.temp
+
 build/
 dist/
 node_modules/
+
 aws-exports.js
 awsconfiguration.json
 amplifyconfiguration.json
@@ -33,6 +61,7 @@ amplifyconfiguration.dart
 amplify-build-config.json
 amplify-gradle-config.json
 amplifytools.xcconfig
+
 .secret-*
 **.sample
 #amplify-do-not-edit-end
