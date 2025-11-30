@@ -5,11 +5,14 @@ import 'package:my_project/screens/home/directions_screen.dart';
 import 'package:my_project/screens/home/nearby.dart';
 import 'package:my_project/screens/home/pili_cafe/pili_cafe.dart' as pili;
 import 'package:my_project/screens/home/naga_bars.dart' as bars;
+import 'package:my_project/screens/home/pili_resorts.dart';
+import 'package:my_project/screens/home/naga_parks.dart';
 import 'package:my_project/screens/home/header.dart';
 import 'package:my_project/screens/demomap.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String locationName;
+
   const CategoryScreen({super.key, required this.locationName});
 
   @override
@@ -37,48 +40,63 @@ class _CategoryScreenState extends State<CategoryScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => pili.CafePage(locationName: locationName),
+                builder: (context) =>
+                    pili.CafePage(locationName: locationName),
               ),
             );
           } else {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => naga.CafePage(locationName: locationName),
+                builder: (context) =>
+                    naga.CafePage(locationName: locationName),
               ),
             );
           }
         },
       },
-
-      // ✅ NEW: Beach
       {
         "image": 'assets/beach.png',
         "name": "Resorts",
         "onTap": (BuildContext context, String locationName) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Beaches for $locationName coming soon 🌊'),
-              backgroundColor: Colors.blueAccent,
-            ),
-          );
+          if (locationName.toLowerCase().contains('pili')) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ResortsPage(locationName: locationName),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Resorts for $locationName coming soon 🏖️'),
+                backgroundColor: Colors.blueAccent,
+              ),
+            );
+          }
         },
       },
-
-      // ✅ NEW: Parks
       {
         "image": 'assets/parks.png',
         "name": "Parks",
         "onTap": (BuildContext context, String locationName) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Parks for $locationName coming soon 🌳'),
-              backgroundColor: Colors.green.shade700,
-            ),
-          );
+          if (locationName.toLowerCase().contains('naga')) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ParksPage(locationName: locationName),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Parks for $locationName coming soon 🌳'),
+                backgroundColor: Colors.green.shade700,
+              ),
+            );
+          }
         },
       },
-
       {
         "image": 'assets/restaurant.png',
         "name": "Restaurants",
@@ -98,7 +116,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => bars.BarsPage(locationName: locationName),
+                builder: (context) =>
+                    bars.BarsPage(locationName: locationName),
               ),
             );
           } else {
@@ -118,12 +137,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
     _searchController.addListener(() {
       final query = _searchController.text.toLowerCase();
       setState(() {
-        filteredCategories =
-            allCategories
-                .where(
-                  (cat) => cat['name'].toString().toLowerCase().contains(query),
-                )
-                .toList();
+        filteredCategories = allCategories
+            .where(
+              (cat) =>
+                  cat['name'].toString().toLowerCase().contains(query),
+            )
+            .toList();
       });
     });
   }
@@ -132,15 +151,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
     setState(() {
       if (sortType == 'A-Z') {
         filteredCategories.sort(
-          (a, b) => a['name'].toString().toLowerCase().compareTo(
-            b['name'].toString().toLowerCase(),
-          ),
+          (a, b) => a['name']
+              .toString()
+              .toLowerCase()
+              .compareTo(b['name'].toString().toLowerCase()),
         );
       } else if (sortType == 'Z-A') {
         filteredCategories.sort(
-          (a, b) => b['name'].toString().toLowerCase().compareTo(
-            a['name'].toString().toLowerCase(),
-          ),
+          (a, b) => b['name']
+              .toString()
+              .toLowerCase()
+              .compareTo(a['name'].toString().toLowerCase()),
         );
       }
     });
@@ -162,14 +183,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
         child: ListView(
           children: [
             const SizedBox(height: 20),
-            // search
+
+            // SEARCH BAR
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
                 color: cardColor,
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                  color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+                  color:
+                      isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
                   width: 1,
                 ),
                 boxShadow: [
@@ -187,7 +211,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   Expanded(
                     child: TextField(
                       controller: _searchController,
-                      style: TextStyle(color: textColor, fontSize: 16),
+                      style:
+                          TextStyle(color: textColor, fontSize: 16),
                       decoration: InputDecoration(
                         hintText: "Search categories...",
                         hintStyle: TextStyle(
@@ -195,9 +220,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           fontSize: 16,
                         ),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                        ),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 16),
                       ),
                     ),
                   ),
@@ -210,16 +234,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           color: Colors.grey[300],
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
-                          Icons.close,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
+                        child: Icon(Icons.close,
+                            size: 16, color: Colors.grey[600]),
                       ),
                     ),
                 ],
               ),
             ),
+
             const SizedBox(height: 32),
 
             Text(
@@ -250,34 +272,31 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  itemBuilder:
-                      (BuildContext context) => const [
-                        PopupMenuItem<String>(
-                          value: 'A-Z',
-                          child: Row(
-                            children: [
-                              Icon(Icons.sort_by_alpha, size: 16),
-                              SizedBox(width: 8),
-                              Text('Sort A–Z'),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem<String>(
-                          value: 'Z-A',
-                          child: Row(
-                            children: [
-                              Icon(Icons.sort_by_alpha, size: 16),
-                              SizedBox(width: 8),
-                              Text('Sort Z–A'),
-                            ],
-                          ),
-                        ),
-                      ],
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                  itemBuilder: (BuildContext context) => const [
+                    PopupMenuItem<String>(
+                      value: 'A-Z',
+                      child: Row(
+                        children: [
+                          Icon(Icons.sort_by_alpha, size: 16),
+                          SizedBox(width: 8),
+                          Text('Sort A–Z'),
+                        ],
+                      ),
                     ),
+                    PopupMenuItem<String>(
+                      value: 'Z-A',
+                      child: Row(
+                        children: [
+                          Icon(Icons.sort_by_alpha, size: 16),
+                          SizedBox(width: 8),
+                          Text('Sort Z–A'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.blue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -305,59 +324,58 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 ),
               ],
             ),
+
             const SizedBox(height: 16),
 
-            // categories row
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children:
-                    filteredCategories.map((category) {
-                      final String name = category['name'] as String;
+                children: filteredCategories.map((category) {
+                  final String name = category['name'] as String;
 
-                      // Accent text color per category
-                      final Color accent =
-                          name == 'Cafes'
-                              ? (isDarkMode
-                                  ? const Color.fromARGB(255, 244, 194, 171)
-                                  : const Color.fromARGB(255, 184, 101, 71))
-                              : name == 'Bars'
-                              ? (isDarkMode
-                                  ? const Color.fromARGB(255, 149, 239, 167)
-                                  : const Color.fromARGB(255, 31, 166, 35))
-                              : name == 'Beach'
+                  final Color accent = name == 'Cafes'
+                      ? (isDarkMode
+                          ? const Color.fromARGB(255, 244, 194, 171)
+                          : const Color.fromARGB(255, 184, 101, 71))
+                      : name == 'Bars'
+                          ? (isDarkMode
+                              ? const Color.fromARGB(255, 149, 239, 167)
+                              : const Color.fromARGB(255, 31, 166, 35))
+                          : name == 'Beach'
                               ? (isDarkMode
                                   ? const Color.fromARGB(255, 162, 208, 255)
                                   : const Color(0xFF1A73E8))
                               : name == 'Parks'
-                              ? (isDarkMode
-                                  ? const Color.fromARGB(255, 176, 231, 185)
-                                  : const Color(0xFF2E7D32))
-                              : (isDarkMode
-                                  ? const Color.fromARGB(255, 174, 151, 255)
-                                  : const Color.fromARGB(255, 44, 13, 98));
+                                  ? (isDarkMode
+                                      ? const Color.fromARGB(255, 176, 231, 185)
+                                      : const Color(0xFF2E7D32))
+                                  : (isDarkMode
+                                      ? const Color.fromARGB(255, 174, 151, 255)
+                                      : const Color.fromARGB(255, 44, 13, 98));
 
-                      return Row(
-                        children: [
-                          CategoryCard(
-                            image: category['image'] as String,
-                            name: name,
-                            onTap: () {
-                              if (category.containsKey('onTap')) {
-                                category['onTap'](context, widget.locationName);
-                              }
-                            },
-                            isDarkMode: isDarkMode,
-                            textColor: accent,
-                          ),
-                          const SizedBox(width: 12),
-                        ],
-                      );
-                    }).toList(),
+                  return Row(
+                    children: [
+                      CategoryCard(
+                        image: category['image'] as String,
+                        name: name,
+                        onTap: () {
+                          if (category.containsKey('onTap')) {
+                            category['onTap'](
+                                context, widget.locationName);
+                          }
+                        },
+                        isDarkMode: isDarkMode,
+                        textColor: accent,
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                  );
+                }).toList(),
               ),
             ),
 
             const SizedBox(height: 32),
+
             Text(
               "What do you want to do?",
               style: TextStyle(
@@ -366,19 +384,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 color: textColor,
               ),
             ),
+
             const SizedBox(height: 16),
             const SizedBox(height: 8),
             ActionButton(
-              icon: 'assets/nearby.png',
-              label: "Find nearby places",
-              isDarkMode: isDarkMode,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const NearbyScreen()),
-                );
-              },
-            ),
+                icon: 'assets/nearby.png',
+                label: "Find nearby places",
+                isDarkMode: isDarkMode),
             const SizedBox(height: 12),
             ActionButton(
               icon: 'assets/directions.png',
@@ -393,10 +405,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
             ),
             const SizedBox(height: 12),
             ActionButton(
-              icon: 'assets/fare.png',
-              label: "Check public transport & fare",
-              isDarkMode: isDarkMode,
-            ),
+                icon: 'assets/fare.png',
+                label: "Check public transport & fare",
+                isDarkMode: isDarkMode),
             const SizedBox(height: 40),
           ],
         ),
@@ -405,7 +416,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 }
 
-class CategoryCard extends StatelessWidget {
+/// CATEGORY CARD FIXED ✔
+class CategoryCard extends StatefulWidget {
   final String image;
   final String name;
   final VoidCallback onTap;
@@ -422,21 +434,31 @@ class CategoryCard extends StatelessWidget {
     required this.isDarkMode,
     required this.textColor,
     this.width = 155,
-    this.height = 170,
+    this.height = 173,
   });
+
+  @override
+  State<CategoryCard> createState() => _CategoryCardState();
+}
+
+class _CategoryCardState extends State<CategoryCard>
+    with SingleTickerProviderStateMixin {
+  double scale = 1.0;
+  bool hovering = false;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Container(
-        width: width,
-        height: height,
+        width: widget.width,
+        height: widget.height,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: isDarkMode ? Colors.grey[900] : Colors.white,
+          color: widget.isDarkMode ? Colors.grey[900] : Colors.white,
           border: Border.all(
-            color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+            color:
+                widget.isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
             width: 1,
           ),
           boxShadow: [
@@ -453,29 +475,22 @@ class CategoryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               child: Image.asset(
-                image,
+                widget.image,
                 width: 125,
                 height: 125,
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    Icons.image_not_supported,
-                    size: 50,
-                    color: Colors.grey,
-                  );
-                },
               ),
             ),
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
-                name,
+                widget.name,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: textColor,
+                  color: widget.textColor,
                   height: 1.2,
                 ),
                 maxLines: 2,
@@ -489,6 +504,7 @@ class CategoryCard extends StatelessWidget {
   }
 }
 
+/// ACTION BUTTON — unchanged
 class ActionButton extends StatelessWidget {
   final String icon;
   final String label;
@@ -559,7 +575,8 @@ class ActionButton extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[500]),
+            Icon(Icons.arrow_forward_ios,
+                size: 16, color: Colors.grey[500]),
           ],
         ),
       ),

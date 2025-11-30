@@ -1,5 +1,5 @@
 # ============================================
-# FLUTTER & DART
+# FLUTTER (Generated & Build Artifacts)
 # ============================================
 build/
 .dart_tool/
@@ -25,21 +25,37 @@ windows/flutter/ephemeral/
 # ============================================
 android/.gradle/
 android/local.properties
-*.keystore
-*.jks
+.pub-cache/
+.packages
+
+# Flutter plugin registrants (auto-generated)
+**/GeneratedPluginRegistrant.*
+ios/Flutter/ephemeral/
+macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
 
 # ============================================
-# IDE & SYSTEM FILES
+# IDE / EDITOR
 # ============================================
 .idea/
 .vscode/
 *.iml
+
+# ============================================
+# LOGS
+# ============================================
 *.log
 
 # ============================================
-# WEB
-web/.dart_tool/
-web/.flutter-plugins
+# OPTIONAL: Lockfile (for apps you may want to ignore it)
+pubspec.lock
+
+# ============================================
+# ANDROID
+# ============================================
+android/.gradle/
+*.keystore
+*.jks
 
 # ============================================
 # AMPLIFY (AUTO-GENERATED — DO NOT EDIT)

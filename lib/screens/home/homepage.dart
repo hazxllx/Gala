@@ -6,14 +6,10 @@ import 'category.dart';
 import 'package:provider/provider.dart';
 import 'package:my_project/theme/theme_notifier.dart';
 
-// Import your Favorites screen here with alias to avoid conflict
+// Import your screens
 import 'package:my_project/screens/favorites.dart' as fav;
-
-// Import profile page with alias to avoid conflict
 import 'package:my_project/screens/profile/profile_page.dart' as profile;
 import 'package:my_project/screens/settings/settings.dart';
-
-// Import notifications.dart with alias to avoid conflict
 import 'package:my_project/screens/notifications.dart' as notif;
 
 class HomePage extends StatefulWidget {
@@ -25,12 +21,14 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   bool showAll = false;
   String searchQuery = "";
   int selectedIndex = 0;
   String? username;
   String? userPhotoUrl;
+
+  bool _isAvatarPressed = false; // smooth scale animation flag
 
   @override
   void initState() {
@@ -40,21 +38,20 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchUsername() async {
     try {
-      final user = FirebaseAuth.instance.currentUser ;
+      final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final doc = await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
             .get();
         setState(() {
-          username = doc.data()?['username'] as String? ?? 'User  ';
+          username = doc.data()?['username'] as String? ?? 'User';
           userPhotoUrl = user.photoURL;
         });
       }
     } catch (e) {
-      print('Error fetching username: $e');
       setState(() {
-        username = 'User  ';
+        username = 'User';
         userPhotoUrl = null;
       });
     }
@@ -95,15 +92,16 @@ class _HomePageState extends State<HomePage> {
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
             ),
-            // Logo image that switches in dark mode
+
             Image.asset(
               isDark ? 'assets/logo_white.png' : 'assets/logo.png',
               height: isDark ? screenHeight * 0.05 : screenHeight * 0.035,
-              width: isDark ? screenHeight * 0.05 : null, // Optional: control width too
+              width: isDark ? screenHeight * 0.05 : null,
               fit: BoxFit.contain,
             ),
+
             SizedBox(width: screenWidth * 0.015),
-            // Gradient "Gala" text using Sarina font
+
             ShaderMask(
               shaderCallback: (bounds) {
                 return LinearGradient(
@@ -111,14 +109,8 @@ class _HomePageState extends State<HomePage> {
                   end: Alignment.bottomRight,
                   stops: [0.37, 1.0],
                   colors: isDark
-                      ? [
-                          Color(0xFF58BCF1), // blue (dark mode)
-                          Color(0xFFFFFFFF), // white (dark mode)
-                        ]
-                      : [
-                          Color(0xFF041D66), // deep blue (light mode)
-                          Color(0xFF000000), // black (light mode)
-                        ],
+                      ? [Color(0xFF58BCF1), Color(0xFFFFFFFF)]
+                      : [Color(0xFF041D66), Color(0xFF000000)],
                 ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height));
               },
               child: Text(
@@ -127,7 +119,7 @@ class _HomePageState extends State<HomePage> {
                   fontFamily: 'Sarina',
                   fontSize: screenWidth * 0.055,
                   fontWeight: FontWeight.normal,
-                  color: Colors.white, // required, but gets overridden by shader
+                  color: Colors.white,
                   letterSpacing: 0.8,
                 ),
               ),
@@ -153,12 +145,11 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Stack(
         children: [
-          // Main content
           SingleChildScrollView(
             padding: EdgeInsets.only(
               left: screenWidth * 0.045,
               right: screenWidth * 0.045,
-              bottom: screenHeight * 0.18, // Space for floating nav bar
+              bottom: screenHeight * 0.18,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,19 +169,53 @@ class _HomePageState extends State<HomePage> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    CircleAvatar(
-                      backgroundImage: userPhotoUrl != null
-                          ? NetworkImage(userPhotoUrl!) as ImageProvider
-                          : const AssetImage('assets/user.png'),
-                      backgroundColor: Colors.transparent,
-                      radius: screenWidth * 0.05,
+
+                    // ▪▪▪ Avatar clickable + smooth scale animation ▪▪▪
+                    GestureDetector(
+                      onTapDown: (_) => setState(() => _isAvatarPressed = true),
+                      onTapUp: (_) {
+                        setState(() => _isAvatarPressed = false);
+                        Future.delayed(Duration(milliseconds: 120), () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => profile.ProfilePage(
+                                username: username ?? 'User',
+                                onSettingsTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => SettingsPage(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        });
+                      },
+                      onTapCancel: () =>
+                          setState(() => _isAvatarPressed = false),
+
+                      child: AnimatedScale(
+                        scale: _isAvatarPressed ? 0.88 : 1.0,
+                        duration: Duration(milliseconds: 150),
+                        curve: Curves.easeOut,
+                        child: CircleAvatar(
+                          backgroundImage: userPhotoUrl != null
+                              ? NetworkImage(userPhotoUrl!)
+                              : AssetImage('assets/user.png')
+                                  as ImageProvider,
+                          backgroundColor: Colors.transparent,
+                          radius: screenWidth * 0.05,
+                        ),
+                      ),
                     ),
                   ],
                 ),
 
                 SizedBox(height: screenHeight * 0.015),
 
-                // Discover section
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -208,7 +233,7 @@ class _HomePageState extends State<HomePage> {
                         fontSize: screenWidth * 0.07,
                         color: isDark
                             ? Colors.blue[200]!
-                            : const Color.fromARGB(255, 13, 94, 161),
+                            : Color.fromARGB(255, 13, 94, 161),
                         fontWeight: FontWeight.bold,
                         height: 0.7,
                       ),
@@ -218,7 +243,6 @@ class _HomePageState extends State<HomePage> {
 
                 SizedBox(height: screenHeight * 0.02),
 
-                // Search field
                 TextField(
                   onChanged: (value) {
                     setState(() {
@@ -248,7 +272,6 @@ class _HomePageState extends State<HomePage> {
 
                 SizedBox(height: screenHeight * 0.02),
 
-                // Section header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -280,11 +303,11 @@ class _HomePageState extends State<HomePage> {
 
                 SizedBox(height: screenHeight * 0.01),
 
-                // Locations display
                 if (displayedLocations.isEmpty)
                   Center(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.05),
+                      padding:
+                          EdgeInsets.symmetric(vertical: screenHeight * 0.05),
                       child: Text(
                         "No locations found.",
                         style: TextStyle(
@@ -313,17 +336,19 @@ class _HomePageState extends State<HomePage> {
                                 );
                               },
                               child: SizedBox(
-                                width: (screenWidth - (screenWidth * 0.09) - screenWidth * 0.02) / 2,
+                                width:
+                                    (screenWidth - (screenWidth * 0.09) - screenWidth * 0.02) /
+                                        2,
                                 child: LocationCard(
                                   location: location,
-                                  height: screenHeight * 0.18,
+                                  height: screenHeight * 0.18 * 1.03, // +3%
                                 ),
                               ),
                             );
                           }).toList(),
                         )
                       : SizedBox(
-                          height: screenHeight * 0.32,
+                          height: screenHeight * 0.32 * 1.03, // +3%
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             itemCount: (displayedLocations.length / 2).ceil(),
@@ -332,7 +357,8 @@ class _HomePageState extends State<HomePage> {
                               final secondIndex = firstIndex + 1;
 
                               return Padding(
-                                padding: EdgeInsets.only(right: screenWidth * 0.03),
+                                padding:
+                                    EdgeInsets.only(right: screenWidth * 0.03),
                                 child: Column(
                                   children: [
                                     _buildLocationTile(
@@ -356,31 +382,28 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
 
-                SizedBox(height: screenHeight * 0.09),
+                SizedBox(height: screenHeight * 0.07),
 
-                // Info card
                 Center(
                   child: Container(
-                    width: screenWidth * 0.9,
+                    width: screenWidth * 1.2,
                     height: screenHeight * 0.25,
                     padding: EdgeInsets.all(screenWidth * 0.04),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color.fromARGB(255, 1, 26, 55)
+                          ? Color.fromARGB(255, 1, 26, 55)
                           : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black12,
                           blurRadius: 8,
-                          offset: const Offset(0, 4),
+                          offset: Offset(0, 4),
                         ),
                       ],
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
                           "Beyond Just Locations,",
@@ -398,7 +421,7 @@ class _HomePageState extends State<HomePage> {
                             fontWeight: FontWeight.w700,
                             color: isDark
                                 ? Colors.blue[200]!
-                                : const Color.fromARGB(255, 14, 94, 159),
+                                : Color.fromARGB(255, 14, 94, 159),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -408,9 +431,7 @@ class _HomePageState extends State<HomePage> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: screenWidth * 0.032,
-                            color: isDark
-                                ? Colors.white70
-                                : const Color.fromARGB(226, 0, 0, 0),
+                            color: isDark ? Colors.white70 : Colors.black87,
                             height: 1.4,
                           ),
                         ),
@@ -422,7 +443,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // Floating Bottom Navigation Bar
+          // bottom nav
           Positioned(
             bottom: screenHeight * 0.06,
             left: screenWidth * 0.05,
@@ -436,7 +457,7 @@ class _HomePageState extends State<HomePage> {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.15),
                     blurRadius: 20,
-                    offset: const Offset(0, 8),
+                    offset: Offset(0, 8),
                     spreadRadius: 2,
                   ),
                 ],
@@ -456,7 +477,8 @@ class _HomePageState extends State<HomePage> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => HomePage(username: username),
+                            builder: (context) =>
+                                HomePage(username: username),
                           ),
                         );
                       }
@@ -473,7 +495,8 @@ class _HomePageState extends State<HomePage> {
                         setState(() => selectedIndex = 1);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => fav.FavoritesScreen()),
+                          MaterialPageRoute(
+                              builder: (context) => fav.FavoritesScreen()),
                         );
                       }
                     },
@@ -487,11 +510,11 @@ class _HomePageState extends State<HomePage> {
                     () {
                       if (selectedIndex != 2) {
                         setState(() => selectedIndex = 2);
-                        // Use push here to keep HomePage below in stack for back button
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => notif.NotificationsPage(username: username),
+                            builder: (context) =>
+                                notif.NotificationsPage(username: username),
                           ),
                         );
                       }
@@ -510,11 +533,13 @@ class _HomePageState extends State<HomePage> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => profile.ProfilePage(
-                              username: username ?? 'User  ',
+                              username: username ?? 'User',
                               onSettingsTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SettingsPage()),
                                 );
                               },
                             ),
@@ -583,17 +608,24 @@ class _HomePageState extends State<HomePage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CategoryScreen(locationName: location['name']!),
+            builder: (context) =>
+                CategoryScreen(locationName: location['name']!),
           ),
         );
       },
       child: SizedBox(
-        width: (screenWidth - (screenWidth * 0.09) - screenWidth * 0.06) / 2.2,
-        height: screenHeight * 0.15,
+        width: (screenWidth -
+                (screenWidth * 0.09) -
+                screenWidth * 0.06) /
+            2.2,
+        height: screenHeight * 0.15 * 1.03, // +3%
         child: LocationCard(
           location: location,
-          height: screenHeight * 0.15,
-          width: (screenWidth - (screenWidth * 0.09) - screenWidth * 0.06) / 2.2,
+          height: screenHeight * 0.15 * 1.03,
+          width: (screenWidth -
+                  (screenWidth * 0.09) -
+                  screenWidth * 0.06) /
+              2.2,
         ),
       ),
     );
@@ -625,7 +657,7 @@ class LocationCard extends StatelessWidget {
           BoxShadow(
             color: Colors.black12,
             blurRadius: 6,
-            offset: const Offset(2, 2),
+            offset: Offset(2, 2),
           ),
         ],
       ),
@@ -657,7 +689,7 @@ class LocationCard extends StatelessWidget {
                     color: Colors.white,
                     fontSize: screenWidth * 0.045,
                     fontWeight: FontWeight.bold,
-                    shadows: const [
+                    shadows: [
                       Shadow(
                         blurRadius: 2,
                         color: Colors.black45,
@@ -677,7 +709,6 @@ class LocationCard extends StatelessWidget {
   }
 }
 
-// Sample locations list
 final List<Map<String, String>> locations = [
   {'name': 'Naga City', 'image': 'assets/naga_city.png'},
   {'name': 'Pili', 'image': 'assets/pili.jpg'},

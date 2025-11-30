@@ -2,86 +2,61 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'package:my_project/screens/home/arcodiez/arco_diez.dart';
-import 'package:my_project/screens/home/harina/harina.dart';
-import 'package:my_project/screens/home/caramel/caramel_cafe_page.dart';
 import 'package:my_project/screens/favorites.dart' as fav;
+import 'package:my_project/screens/home/pili_resorts/pmaq.dart';
 import 'package:my_project/screens/profile/profile_page.dart' as profile;
 import 'package:my_project/screens/settings/settings.dart';
 import 'package:my_project/screens/notifications.dart' as notif;
 import 'package:my_project/screens/home/header.dart';
+import 'pili_resorts/bluish.dart';
 
-class CafePage extends StatefulWidget {
+class ResortsPage extends StatefulWidget {
   final String locationName;
-  const CafePage({super.key, required this.locationName});
+  const ResortsPage({super.key, required this.locationName});
 
   @override
-  State<CafePage> createState() => _CafePageState();
+  State<ResortsPage> createState() => _ResortsPageState();
 }
 
-class _CafePageState extends State<CafePage> {
+class _ResortsPageState extends State<ResortsPage> {
   final TextEditingController _searchController = TextEditingController();
   int selectedIndex = 0;
 
-List<CafeData> allCafes = [
-  CafeData(
-    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/arco_diez.jpeg',
-    title: 'Arco Diez Cafe',
-    subtitle: 'Pacol Rd, Naga City',
+List<ResortData> allResorts = [
+  ResortData(
+    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/pili_resorts/bluish/bluish3.jpg',
+    title: 'Bluish Resort',
+    subtitle: 'Zone 5, Tagbong Pili, Camarines Sur 4418',
+    page: const BluishResortPage(),
   ),
-  CafeData(
-    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/tct.jpg',
-    title: 'The Coffee Table',
-    subtitle: 'Magsaysay Ave, Naga City',
-  ),
-  CafeData(
-    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/harina.jpeg',
-    title: 'Harina Cafe',
-    subtitle: 'Narra St, Naga City',
-  ),
-  // ⭐ NEW — Caramel Cafe Added
-  CafeData(
-    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/caramel/caramel1.jpg',
-    title: 'Caramel Cafe',
-    subtitle: 'Diversion Road, Naga City',
+  ResortData(
+    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/pili_resorts/pmaq/pmaq1.jpg',
+    title: 'PMAQ Ville Resort',
+    subtitle: 'Zone 3, PROSAMAPI, Palestina Pili, Philippines',
+    page: const PmaqVilleResortPage(),
   ),
 ];
 
-List<CafeData> nearbyCafes = [
-  CafeData(
-    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/beanleaf.png',
-    title: 'Beanleaf Coffee and Tea',
-    subtitle: '2F Grand Master Mall, Naga City',
-  ),
-  CafeData(
-    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/bellissimo.png',
-    title: 'Bellissimo Boulangerie & Patisserie',
-    subtitle: '800, 461, Naga City',
-  ),
-  CafeData(
-    imagePath: 'https://gala-app-images.s3.ap-southeast-2.amazonaws.com/naga_cafe/garden_cafe.jpeg',
-    title: 'Starmark Cafe',
-    subtitle: 'Diaz St. cor Peñafrancia, Naga City',
-  ),
-];
 
-  bool get isNaga => widget.locationName.toLowerCase().contains('naga');
+  List<ResortData> nearbyResorts = [];
+
+  bool get isPili => widget.locationName.toLowerCase().contains('pili');
   bool get isSearching => _searchController.text.isNotEmpty;
 
-  List<CafeData> get _filteredCafes {
-    if (!isNaga) return [];
+  List<ResortData> get _filteredResorts {
+    if (!isPili) return [];
     final query = _searchController.text.toLowerCase();
     if (query.isEmpty) return [];
-    final allCafesList = [...allCafes, ...nearbyCafes];
-    return allCafesList.where((cafe) {
-      return cafe.title.toLowerCase().contains(query) ||
-          cafe.subtitle.toLowerCase().contains(query);
+    final allResortsList = [...allResorts, ...nearbyResorts];
+    return allResortsList.where((resort) {
+      return resort.title.toLowerCase().contains(query) ||
+          resort.subtitle.toLowerCase().contains(query);
     }).toList();
   }
 
   User? user;
   String? userPhotoUrl;
-  Stream<Set<String>> favoriteCafeTitlesStream = Stream.value(<String>{});
+  Stream<Set<String>> favoriteResortTitlesStream = Stream.value(<String>{});
 
   @override
   void initState() {
@@ -90,7 +65,7 @@ List<CafeData> nearbyCafes = [
     user = FirebaseAuth.instance.currentUser;
     userPhotoUrl = user?.photoURL;
     if (user != null) {
-      favoriteCafeTitlesStream = FirebaseFirestore.instance
+      favoriteResortTitlesStream = FirebaseFirestore.instance
           .collection('users')
           .doc(user!.uid)
           .collection('favorites')
@@ -99,89 +74,82 @@ List<CafeData> nearbyCafes = [
     }
   }
 
-  void _sortCafes(String sortType, List<CafeData> cafesToSort) {
+  void _sortResorts(String sortType, List<ResortData> resortsToSort) {
     setState(() {
       if (sortType == 'A-Z') {
-        cafesToSort.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+        resortsToSort.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
       } else if (sortType == 'Z-A') {
-        cafesToSort.sort((a, b) => b.title.toLowerCase().compareTo(a.title.toLowerCase()));
+        resortsToSort.sort((a, b) => b.title.toLowerCase().compareTo(a.title.toLowerCase()));
       }
     });
   }
 
-  void _sortAllCafes(String sortType) {
-    _sortCafes(sortType, allCafes);
+  void _sortAllResorts(String sortType) {
+    _sortResorts(sortType, allResorts);
   }
 
-  void _sortNearbyCafes(String sortType) {
-    _sortCafes(sortType, nearbyCafes);
-  }
-
-  Future<void> _toggleFavorite(CafeData cafe, Set<String> favoriteCafeTitles) async {
+  Future<void> _toggleFavorite(ResortData resort, Set<String> favoriteResortTitles) async {
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please log in to manage favorites')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please log in to manage favorites')),
+        );
+      }
       return;
     }
     final favRef = FirebaseFirestore.instance
         .collection('users')
         .doc(user!.uid)
         .collection('favorites')
-        .doc(cafe.title);
+        .doc(resort.title);
 
-    final isFav = favoriteCafeTitles.contains(cafe.title);
+    final isFav = favoriteResortTitles.contains(resort.title);
 
     if (isFav) {
       await favRef.delete();
     } else {
       await favRef.set({
-        'imagePath': cafe.imagePath,
-        'subtitle': cafe.subtitle,
+        'imagePath': resort.imagePath,
+        'subtitle': resort.subtitle,
+        'type': 'Resort',
         'addedAt': FieldValue.serverTimestamp(),
       });
     }
   }
 
-Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
-  final isFavorite = favoriteCafeTitles.contains(cafe.title);
+  Widget _buildResortCard(ResortData resort, Set<String> favoriteResortTitles) {
+    final isFavorite = favoriteResortTitles.contains(resort.title);
 
-  return GestureDetector(
-    onTap: () {
-      if (cafe.title == 'Arco Diez Cafe') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ArcoDiezPage()),
-        );
-      } 
-      else if (cafe.title == 'Harina Cafe') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const HarinaCafePage()),
-        );
-      }
-      else if (cafe.title == 'Caramel Cafe') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const CaramelCafePage()),
-        );
-      }
-      else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No details page yet for ${cafe.title}')),
-        );
-      }
-    },
-    child: CafeCard(
-      imagePath: cafe.imagePath,
-      title: cafe.title,
-      subtitle: cafe.subtitle,
-      isFavorite: isFavorite,
-      onFavoriteToggle: () => _toggleFavorite(cafe, favoriteCafeTitles),
-      user: user,
-    ),
-  );
-}
+    return GestureDetector(
+      onTap: () {
+        if (resort.page != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => resort.page!),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No details page yet for ${resort.title}')),
+          );
+        }
+      },
+      child: ResortCard(
+        imagePath: resort.imagePath,
+        title: resort.title,
+        subtitle: resort.subtitle,
+        isFavorite: isFavorite,
+        onFavoriteToggle: () => _toggleFavorite(resort, favoriteResortTitles),
+        user: user,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -191,9 +159,7 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       resizeToAvoidBottomInset: false,
-      appBar: GalaHeader(
-        userPhotoUrl: userPhotoUrl,
-      ),
+      appBar: GalaHeader(userPhotoUrl: userPhotoUrl),
       body: Column(
         children: [
           Expanded(
@@ -202,7 +168,7 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (isNaga)
+                  if (isPili)
                     Container(
                       margin: const EdgeInsets.symmetric(vertical: 20),
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
@@ -215,7 +181,7 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withAlpha((0.08 * 255).round()),
+                            color: Colors.black.withValues(alpha: 0.08),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -237,7 +203,7 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
                                 fontSize: 16,
                               ),
                               decoration: InputDecoration(
-                                hintText: 'Search cafes...',
+                                hintText: 'Search resorts...',
                                 hintStyle: TextStyle(
                                   color: Colors.grey[500],
                                   fontSize: 16,
@@ -282,9 +248,9 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
                         ),
                         children: [
                           const TextSpan(
-                            text: 'Cafes',
+                            text: 'Resorts',
                             style: TextStyle(
-                              color: Color.fromARGB(255, 11, 116, 177),
+                              color: Color(0xFF1556B1),
                               fontFamily: 'Inter',
                               fontSize: 32,
                               fontWeight: FontWeight.w800,
@@ -304,12 +270,12 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  if (isSearching && isNaga) ...[
+                  if (isSearching && isPili) ...[
                     StreamBuilder<Set<String>>(
-                      stream: favoriteCafeTitlesStream,
+                      stream: favoriteResortTitlesStream,
                       builder: (context, snapshot) {
-                        final favoriteCafeTitles = snapshot.data ?? <String>{};
-                        if (_filteredCafes.isEmpty) {
+                        final favoriteResortTitles = snapshot.data ?? <String>{};
+                        if (_filteredResorts.isEmpty) {
                           return Center(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 60),
@@ -329,7 +295,7 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
                                   ),
                                   const SizedBox(height: 24),
                                   Text(
-                                    'No cafes found',
+                                    'No resorts found',
                                     style: TextStyle(
                                       fontSize: 20,
                                       color: Colors.grey[700],
@@ -355,10 +321,10 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
                               padding: const EdgeInsets.symmetric(horizontal: 4),
-                              itemCount: _filteredCafes.length,
+                              itemCount: _filteredResorts.length,
                               itemBuilder: (context, index) {
-                                final cafe = _filteredCafes[index];
-                                return _buildCafeCard(cafe, favoriteCafeTitles);
+                                final resort = _filteredResorts[index];
+                                return _buildResortCard(resort, favoriteResortTitles);
                               },
                             ),
                           );
@@ -366,7 +332,7 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
                       },
                     ),
                   ],
-                  if (!isSearching && isNaga) ...[
+                  if (!isSearching && isPili) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Row(
@@ -377,13 +343,13 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.orange.withAlpha((0.13 * 255).round()),
+                                  color: const Color(0xFF1556B1).withValues(alpha: 0.13),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
-                                  Icons.star,
+                                  Icons.pool,
                                   size: 20,
-                                  color: isDark ? Colors.yellow[400] : Colors.orange,
+                                  color: isDark ? const Color(0xFF6BA3E8) : const Color(0xFF1556B1),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -398,7 +364,7 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
                             ],
                           ),
                           PopupMenuButton<String>(
-                            onSelected: _sortAllCafes,
+                            onSelected: _sortAllResorts,
                             offset: const Offset(0, 40),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -428,10 +394,10 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withAlpha((0.1 * 255).round()),
+                                color: Colors.blue.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: Colors.blue.withAlpha((0.3 * 255).round()),
+                                  color: Colors.blue.withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -457,125 +423,21 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
                     ),
                     const SizedBox(height: 16),
                     StreamBuilder<Set<String>>(
-                      stream: favoriteCafeTitlesStream,
+                      stream: favoriteResortTitlesStream,
                       builder: (context, snapshot) {
-                        final favoriteCafeTitles = snapshot.data ?? <String>{};
+                        final favoriteResortTitles = snapshot.data ?? <String>{};
                         return SizedBox(
                           height: 190,
                           child: ListView(
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(horizontal: 4),
-                            children: allCafes.map((cafe) => _buildCafeCard(cafe, favoriteCafeTitles)).toList(),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 32),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withAlpha((0.1 * 255).round()),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.location_on,
-                                  size: 18,
-                                  color: Colors.green,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Nearby You',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
-                                ),
-                              ),
-                            ],
-                          ),
-                          PopupMenuButton<String>(
-                            onSelected: _sortNearbyCafes,
-                            offset: const Offset(0, 40),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            itemBuilder: (BuildContext context) => [
-                              const PopupMenuItem<String>(
-                                value: 'A-Z',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.sort_by_alpha, size: 16),
-                                    SizedBox(width: 8),
-                                    Text('Sort A–Z'),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem<String>(
-                                value: 'Z-A',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.sort_by_alpha, size: 16),
-                                    SizedBox(width: 8),
-                                    Text('Sort Z–A'),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withAlpha((0.1 * 255).round()),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.blue.withAlpha((0.3 * 255).round()),
-                                  width: 1,
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.sort, size: 16, color: Colors.blue),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Sort by',
-                                    style: TextStyle(
-                                      color: Colors.blue,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    StreamBuilder<Set<String>>(
-                      stream: favoriteCafeTitlesStream,
-                      builder: (context, snapshot) {
-                        final favoriteCafeTitles = snapshot.data ?? <String>{};
-                        return SizedBox(
-                          height: 190,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            children: nearbyCafes.map((cafe) => _buildCafeCard(cafe, favoriteCafeTitles)).toList(),
+                            children: allResorts.map((resort) => _buildResortCard(resort, favoriteResortTitles)).toList(),
                           ),
                         );
                       },
                     ),
                   ],
-                  if (!isNaga)
+                  if (!isPili)
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 60),
@@ -595,7 +457,7 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
                             ),
                             const SizedBox(height: 24),
                             Text(
-                              'No cafes available',
+                              'No resorts available',
                               style: TextStyle(
                                 fontSize: 20,
                                 color: Colors.grey[700],
@@ -634,7 +496,7 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                   spreadRadius: 2,
@@ -737,7 +599,7 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
           vertical: screenWidth * 0.025,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withOpacity(0.15) : Colors.transparent,
+          color: isSelected ? Colors.blue.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(25),
         ),
         child: AnimatedSwitcher(
@@ -756,19 +618,21 @@ Widget _buildCafeCard(CafeData cafe, Set<String> favoriteCafeTitles) {
   }
 }
 
-class CafeData {
+class ResortData {
   final String imagePath;
   final String title;
   final String subtitle;
+  final Widget? page;
 
-  const CafeData({
+  const ResortData({
     required this.imagePath,
     required this.title,
     required this.subtitle,
+    this.page,
   });
 }
 
-class CafeCard extends StatelessWidget {
+class ResortCard extends StatelessWidget {
   final String imagePath;
   final String title;
   final String subtitle;
@@ -776,7 +640,7 @@ class CafeCard extends StatelessWidget {
   final VoidCallback onFavoriteToggle;
   final User? user;
 
-  const CafeCard({
+  const ResortCard({
     super.key,
     required this.imagePath,
     required this.title,
@@ -788,7 +652,7 @@ class CafeCard extends StatelessWidget {
 
   Stream<({double? average, int count, int? userRating})> getRatingInfo() {
     final ratingsRef = FirebaseFirestore.instance
-        .collection('cafes')
+        .collection('resorts')
         .doc(title)
         .collection('ratings');
     return ratingsRef.snapshots().map((snapshot) {
@@ -817,7 +681,7 @@ class CafeCard extends StatelessWidget {
     showDialog(
       context: context,
       barrierColor: Colors.black38,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             final isEnabled = selectedRating != 0 && selectedRating != yourRating && !isSubmitting;
@@ -863,7 +727,7 @@ class CafeCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: TextButton(
-                            onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                            onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
                             child: const Text(
                               'Cancel',
                               style: TextStyle(
@@ -883,20 +747,24 @@ class CafeCard extends StatelessWidget {
                                     setDialogState(() => isSubmitting = true);
                                     if (user != null) {
                                       final ratingRef = FirebaseFirestore.instance
-                                          .collection('cafes')
+                                          .collection('resorts')
                                           .doc(title)
                                           .collection('ratings')
                                           .doc(user!.uid);
                                       await ratingRef.set({'rating': selectedRating});
-                                      Navigator.pop(context);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Thanks for rating $title!'),
-                                          backgroundColor: const Color(0xFF0B55A0),
-                                        ),
-                                      );
+                                      if (dialogContext.mounted) {
+                                        Navigator.pop(dialogContext);
+                                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Thanks for rating $title!'),
+                                            backgroundColor: const Color(0xFF0B55A0),
+                                          ),
+                                        );
+                                      }
                                     }
-                                    setDialogState(() => isSubmitting = false);
+                                    if (context.mounted) {
+                                      setDialogState(() => isSubmitting = false);
+                                    }
                                   }
                                 : null,
                             style: ElevatedButton.styleFrom(
@@ -939,18 +807,20 @@ class CafeCard extends StatelessWidget {
                               : () async {
                                   if (user != null) {
                                     final ratingRef = FirebaseFirestore.instance
-                                        .collection('cafes')
+                                        .collection('resorts')
                                         .doc(title)
                                         .collection('ratings')
                                         .doc(user!.uid);
                                     await ratingRef.delete();
-                                    Navigator.pop(context);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text('Your rating was removed!'),
-                                        backgroundColor: Colors.grey[600],
-                                      ),
-                                    );
+                                    if (dialogContext.mounted) {
+                                      Navigator.pop(dialogContext);
+                                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                        SnackBar(
+                                          content: const Text('Your rating was removed!'),
+                                          backgroundColor: Colors.grey[600],
+                                        ),
+                                      );
+                                    }
                                   }
                                 },
                           icon: const Icon(Icons.delete, color: Colors.redAccent),
@@ -979,10 +849,10 @@ class CafeCard extends StatelessWidget {
       margin: const EdgeInsets.only(right: 15),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: isDark ? Colors.white.withOpacity(0.09) : Colors.grey[200],
+        color: isDark ? Colors.white.withValues(alpha: 0.09) : Colors.grey[200],
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -1001,20 +871,29 @@ class CafeCard extends StatelessWidget {
                   fit: BoxFit.cover,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
-                    return Center(
-                      child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                            : null,
+                    return Container(
+                      height: 250,
+                      width: 170,
+                      color: Colors.grey[300],
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
                       ),
                     );
                   },
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
+                      height: 250,
+                      width: 170,
                       color: Colors.grey[300],
-                      child: const Center(
-                        child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                      child: const Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 40,
                       ),
                     );
                   },
@@ -1028,7 +907,7 @@ class CafeCard extends StatelessWidget {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withOpacity(0.7),
+                        Colors.black.withValues(alpha: 0.7),
                       ],
                     ),
                   ),
@@ -1054,11 +933,11 @@ class CafeCard extends StatelessWidget {
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white : Colors.white.withOpacity(0.9),
+                      color: isDark ? Colors.white : Colors.white.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.13),
+                          color: Colors.black.withValues(alpha: 0.13),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -1138,11 +1017,11 @@ class CafeCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
