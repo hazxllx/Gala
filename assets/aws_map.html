@@ -10,6 +10,45 @@
         body { margin: 0; padding: 0; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
         .maplibregl-ctrl-bottom-left { display: none; }
+
+        /* --- STYLES FOR NEARBY PLACES --- */
+        .place-marker {
+            background-color: #FF0000;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .place-marker:active { transform: scale(1.2); }
+
+        .place-tag {
+            position: absolute;
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            color: black;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        .place-tag::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid white;
+        }
     </style>
 </head>
 <body>
@@ -27,7 +66,8 @@
     // Markers
     let map;
     let startMarker = new maplibregl.Marker({ color: "#4CAF50" }); 
-    let destMarker = new maplibregl.Marker({ color: "#F44336" }); 
+    let destMarker = new maplibregl.Marker({ color: "#F44336" });
+    let placeMarkers = []; // For Nearby Places
 
     // --- 1. FETCH & PATCH STYLE ---
     const styleUrl = `https://maps.geo.${REGION}.amazonaws.com/maps/v0/maps/${MAP_NAME}/style-descriptor?key=${API_KEY}`;
@@ -58,12 +98,11 @@
             zoom: 15,
             attributionControl: false,
             
-            // --- RENDERING OPTIMIZATIONS (Prevents BAD ALLOC crashes) ---
-            pitchWithRotate: false, // Disable 3D tilt
-            dragRotate: false,      // Disable rotation
-            antialias: false,       // Disable edge smoothing (Big memory saver)
-            fadeDuration: 0,        // Disable tile fading (Faster rendering)
-            // Cap pixel ratio to 2.0 to prevent high-DPI screens from using too much memory
+            // --- RENDERING OPTIMIZATIONS ---
+            pitchWithRotate: false, 
+            dragRotate: false,      
+            antialias: false,       
+            fadeDuration: 0,        
             pixelRatio: Math.min(window.devicePixelRatio, 2) 
         });
 
@@ -90,19 +129,38 @@
 
     // --- DART FUNCTIONS ---
 
+    // 1. Update Start/User Location
     function updateStartLocation(lat, lng) {
         if (!map) return;
+        
+        // Handle "hide" case (0,0)
+        if(lat === 0 && lng === 0) {
+            startMarker.remove();
+            return;
+        }
+
         startMarker.setLngLat([lng, lat]).addTo(map);
+        
+        // Only fly to location if we aren't currently viewing a route (dest is hidden)
+        // or if we are just setting up
         if (!destMarker.getElement().parentElement) {
             map.flyTo({ center: [lng, lat], zoom: 15 });
         }
     }
 
+    // 2. Update Destination
     function updateDestination(lat, lng) {
         if (!map) return;
+        
+        if(lat === 0 && lng === 0) {
+            destMarker.remove();
+            return;
+        }
+        
         destMarker.setLngLat([lng, lat]).addTo(map);
     }
 
+    // 3. Draw Route
     function drawRoute(coordinates) {
         if (!map) return;
         const geojson = {
@@ -115,22 +173,65 @@
             map.getSource('route').setData(geojson);
         }
 
-        const bounds = coordinates.reduce(function (bounds, coord) {
-            return bounds.extend(coord);
-        }, new maplibregl.LngLatBounds(coordinates[0], coordinates[0]));
+        if (coordinates.length > 0) {
+            const bounds = coordinates.reduce(function (bounds, coord) {
+                return bounds.extend(coord);
+            }, new maplibregl.LngLatBounds(coordinates[0], coordinates[0]));
 
-        map.fitBounds(bounds, { padding: 50 });
+            map.fitBounds(bounds, { padding: 50 });
+        }
     }
 
+    // 4. Clear Route
     function clearRoute() {
         if (!map) return;
         destMarker.remove();
         if (map.getSource('route')) {
             map.getSource('route').setData({
                 'type': 'Feature',
+                'properties': {},
                 'geometry': { 'type': 'LineString', 'coordinates': [] }
             });
         }
+    }
+
+    // 5. Update Nearby Places (For Nearby Mode)
+    function updatePlaces(placesJson) {
+        if (!map) return;
+
+        // Clear existing place markers
+        placeMarkers.forEach(m => m.remove());
+        placeMarkers = [];
+
+        // Clear routing visualization to avoid clutter
+        clearRoute();
+
+        const places = JSON.parse(placesJson);
+
+        places.forEach(place => {
+            // DOM Element for Marker
+            const el = document.createElement('div');
+            el.className = 'place-marker';
+
+            // Label Tag
+            const tag = document.createElement('div');
+            tag.className = 'place-tag';
+            tag.innerText = place.label.split(',')[0];
+            el.appendChild(tag);
+
+            // Interaction
+            el.addEventListener('click', () => {
+               if(window.PlaceSelected) {
+                   window.PlaceSelected.postMessage(JSON.stringify(place));
+               }
+            });
+
+            const marker = new maplibregl.Marker({ element: el })
+                .setLngLat([place.lon, place.lat])
+                .addTo(map);
+            
+            placeMarkers.push(marker);
+        });
     }
 </script>
 

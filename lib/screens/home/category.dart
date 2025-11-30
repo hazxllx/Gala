@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_project/screens/home/cafe.dart' as naga;
 import 'package:my_project/screens/home/directions_screen.dart';
+import 'package:my_project/screens/home/nearby.dart';
 import 'package:my_project/screens/home/pili_cafe/pili_cafe.dart' as pili;
 import 'package:my_project/screens/home/naga_bars.dart' as bars;
 import 'package:my_project/screens/home/header.dart';
@@ -371,6 +372,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
               icon: 'assets/nearby.png',
               label: "Find nearby places",
               isDarkMode: isDarkMode,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const NearbyScreen()),
+                );
+              },
             ),
             const SizedBox(height: 12),
             ActionButton(

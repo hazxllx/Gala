@@ -60,6 +60,9 @@ class _MapScreenState extends State<MapScreen> {
   int _selectedRouteIndex = 0;
   double? _routeDistance;
   double? _routeDuration;
+  
+  // Stream for live location updates
+  StreamSubscription<Position>? _positionStream;
 
   @override
   void initState() {
@@ -85,6 +88,7 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
+    _positionStream?.cancel(); // Stop live tracking first
     _debounce?.cancel();
     _startController.dispose();
     _destController.dispose();
@@ -149,50 +153,99 @@ class _MapScreenState extends State<MapScreen> {
   // --- LOCATION LOGIC ---
 
   Future<void> _getCurrentLocation() async {
-    setState(() {
-      _isLoading = true;
-      _statusMessage = "Locating you...";
-    });
-
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      setState(() => _isLoading = false);
-      return;
-    }
+    if (!serviceEnabled) return;
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        setState(() => _isLoading = false);
-        return;
-      }
+      if (permission == LocationPermission.denied) return;
     }
 
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-        timeLimit: const Duration(seconds: 10),
-      );
+    setState(() {
+      _isLoading = true;
+      _statusMessage = "Acquiring signal...";
+    });
 
-      _startPos = LatLng(position.latitude, position.longitude);
+    const LocationSettings locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 15,
+    );
 
-      String awsAddress = await _getAwsAddressFromLatLng(_startPos!);
-      _startController.text = awsAddress;
+    _positionStream?.cancel();
+    _positionStream = Geolocator.getPositionStream(
+      locationSettings: locationSettings,
+    ).listen((Position position) async {
+      final newPos = LatLng(position.latitude, position.longitude);
+
+      // Only reverse geocode if Start is empty
+      if (_startPos == null || _startController.text.isEmpty) {
+        String address = await _getAwsAddressFromLatLng(newPos);
+        // Only update text if user hasn't started typing
+        if (_startController.text.isEmpty || _startController.text == "Current Location") {
+             _startController.text = address;
+        }
+      }
 
       if (mounted) {
         setState(() {
+          _startPos = newPos;
           _isLoading = false;
-          _statusMessage = "";
+          if (_statusMessage == "Acquiring signal...") _statusMessage = "";
         });
 
         _webViewController.runJavaScript(
           'updateStartLocation(${position.latitude}, ${position.longitude})',
         );
+
+        // Optional: Recalculate route if destination is set (simple implementation)
+        // Note: Real apps usually throttle this API call
+        /* if (_destPos != null && !_isSearchingStart) {
+           _calculateRoute(_startPos!, _destPos!);
+        }
+        */
       }
-    } catch (e) {
-      debugPrint("Error getting location: $e");
-      if (mounted) setState(() => _isLoading = false);
-    }
+    });
+  }
+
+  // --- SWAP LOGIC ---
+
+  void _swapLocations() {
+    setState(() {
+      final tempText = _startController.text;
+      _startController.text = _destController.text;
+      _destController.text = tempText;
+
+      final tempPos = _startPos;
+      _startPos = _destPos;
+      _destPos = tempPos;
+
+      if (_startPos != null) {
+        _webViewController.runJavaScript(
+          'updateStartLocation(${_startPos!.latitude}, ${_startPos!.longitude})',
+        );
+      } else {
+        _webViewController.runJavaScript('updateStartLocation(0, 0)');
+      }
+
+      if (_destPos != null) {
+        _webViewController.runJavaScript(
+          'updateDestination(${_destPos!.latitude}, ${_destPos!.longitude})',
+        );
+      } else {
+        _webViewController.runJavaScript('updateDestination(0, 0)');
+      }
+
+      if (_startPos != null && _destPos != null) {
+        _calculateRoute(_startPos!, _destPos!);
+      } else {
+        _webViewController.runJavaScript('drawRoute([])');
+        _routeOptions = [];
+        _routeDistance = null;
+        _routeDuration = null;
+        _statusMessage = "";
+      }
+    });
   }
 
   // --- AWS API HELPERS ---
@@ -244,8 +297,6 @@ class _MapScreenState extends State<MapScreen> {
       'https://places.geo.$_AWS_REGION.amazonaws.com/places/v0/indexes/$_PLACE_INDEX/search/text?key=$_API_KEY',
     );
 
-    // Naga City Bounding Box for filtering search results
-    // Lon, Lat, Lon, Lat (SW Corner to NE Corner)
     final nagaCityBBox = [123.1000, 13.5500, 123.2800, 13.7000];
 
     try {
@@ -281,8 +332,6 @@ class _MapScreenState extends State<MapScreen> {
             _suggestions = suggestions;
           });
         }
-      } else {
-        debugPrint("AWS Search Error: ${response.statusCode}");
       }
     } catch (e) {
       debugPrint("Error fetching AWS suggestions: $e");
@@ -296,22 +345,18 @@ class _MapScreenState extends State<MapScreen> {
 
     setState(() {
       if (_isSearchingStart) {
-        // START changed
         _startController.text = displayName;
         _startPos = LatLng(lat, lon);
         _webViewController.runJavaScript('updateStartLocation($lat, $lon)');
 
-        // Recalculate route if Destination is already set
         if (_destPos != null) {
           _calculateRoute(_startPos!, _destPos!);
         }
       } else {
-        // DESTINATION changed
         _destController.text = displayName;
         _destPos = LatLng(lat, lon);
         _webViewController.runJavaScript('updateDestination($lat, $lon)');
 
-        // Recalculate route if Start is already set
         if (_startPos != null) {
           _calculateRoute(_startPos!, _destPos!);
         }
@@ -333,7 +378,6 @@ class _MapScreenState extends State<MapScreen> {
       _routeDuration = null;
     });
 
-    // OSRM API call includes alternatives=true to get multiple routes
     final url = Uri.parse(
       'https://router.project-osrm.org/route/v1/driving/'
       '${start.longitude},${start.latitude};${end.longitude},${end.latitude}'
@@ -353,17 +397,13 @@ class _MapScreenState extends State<MapScreen> {
           for (int i = 0; i < routes.length; i++) {
             final route = routes[i];
             final coordinates = route['geometry']['coordinates'] as List;
-
             final distance = route['distance']?.toDouble() ?? 0;
             final baseDuration = route['duration']?.toDouble() ?? 0;
-
             final adjustedDuration = _calculateRealisticDuration(
               distance,
               baseDuration,
             );
-
-            String description =
-                (i == 0) ? 'Fastest Route' : 'Alternative ${i}';
+            String description = (i == 0) ? 'Fastest Route' : 'Alternative $i';
 
             routeOptions.add(
               RouteOption(
@@ -375,10 +415,7 @@ class _MapScreenState extends State<MapScreen> {
             );
           }
 
-          // Sort options by duration (fastest first)
           routeOptions.sort((a, b) => a.duration.compareTo(b.duration));
-
-          // Set the primary route
           _selectRoute(0, routeOptions);
         } else {
           setState(() {
@@ -405,11 +442,8 @@ class _MapScreenState extends State<MapScreen> {
 
   void _selectRoute(int index, [List<RouteOption>? options]) {
     final list = options ?? _routeOptions;
-
     if (index >= 0 && index < list.length) {
       final route = list[index];
-
-      // Send coordinates to the HTML Map
       final jsonGeometry = json.encode(route.coordinates);
       _webViewController.runJavaScript('drawRoute($jsonGeometry)');
 
@@ -427,7 +461,6 @@ class _MapScreenState extends State<MapScreen> {
 
   void _showRouteOptions() {
     if (_routeOptions.isEmpty) return;
-
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDarkMode ? Colors.white : Colors.black;
     final cardColor = isDarkMode ? Colors.grey[900] : Colors.white;
@@ -451,7 +484,6 @@ class _MapScreenState extends State<MapScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Handle bar
                 Container(
                   margin: const EdgeInsets.only(top: 12),
                   width: 40,
@@ -461,7 +493,6 @@ class _MapScreenState extends State<MapScreen> {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                // Header
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
@@ -486,7 +517,6 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
                 const Divider(height: 1),
-                // Route options list
                 Flexible(
                   child: ListView.builder(
                     shrinkWrap: true,
@@ -494,7 +524,6 @@ class _MapScreenState extends State<MapScreen> {
                     itemBuilder: (context, index) {
                       final route = _routeOptions[index];
                       final isSelected = index == _selectedRouteIndex;
-
                       return InkWell(
                         onTap: () {
                           _selectRoute(index);
@@ -521,7 +550,6 @@ class _MapScreenState extends State<MapScreen> {
                           ),
                           child: Row(
                             children: [
-                              // Route indicator
                               Container(
                                 width: 40,
                                 height: 40,
@@ -544,7 +572,6 @@ class _MapScreenState extends State<MapScreen> {
                                 ),
                               ),
                               const SizedBox(width: 16),
-                              // Route info
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -594,7 +621,6 @@ class _MapScreenState extends State<MapScreen> {
                                   ],
                                 ),
                               ),
-                              // Selected indicator
                               if (isSelected)
                                 Icon(
                                   Icons.check_circle,
@@ -618,16 +644,13 @@ class _MapScreenState extends State<MapScreen> {
     _startController.clear();
     setState(() {
       _startPos = null;
-      // FIX 1: Clear the green marker by moving it off-screen
       _webViewController.runJavaScript('updateStartLocation(0, 0)');
-
       _suggestions = [];
       _routeOptions = [];
       _routeDistance = null;
       _routeDuration = null;
     });
 
-    // FIX 2: Only clear route line and update status if a destination exists
     if (_destPos != null) {
       _webViewController.runJavaScript('drawRoute([])');
       setState(
@@ -649,10 +672,8 @@ class _MapScreenState extends State<MapScreen> {
       _routeDuration = null;
     });
 
-    // Clear route line and the Red Destination marker from HTML
     _webViewController.runJavaScript('clearRoute()');
 
-    // If Start is still set, update status to prompt for new destination
     if (_startPos != null) {
       setState(
         () => _statusMessage = "Start set. Please select a new Destination.",
@@ -664,7 +685,6 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Determine if distance/duration data is ready for display
     final isRouteInfoReady = _routeDistance != null && _routeDuration != null;
 
     return Scaffold(
@@ -673,6 +693,7 @@ class _MapScreenState extends State<MapScreen> {
         children: [
           WebViewWidget(controller: _webViewController),
 
+          // --- TOP CARD (Inputs) ---
           Positioned(
             top: 50,
             left: 20,
@@ -683,94 +704,111 @@ class _MapScreenState extends State<MapScreen> {
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        // --- START LOCATION INPUT ---
-                        TextField(
-                          controller: _startController,
-                          onChanged: (val) => _onSearchChanged(val, true),
-                          decoration: InputDecoration(
-                            icon: const Icon(
-                              Icons.my_location,
-                              color: Colors.green,
-                            ),
-                            labelText: "Start Location",
-                            border: InputBorder.none,
-                            isDense: true,
-                            // Clear button for Start input
-                            suffixIcon:
-                                _startController.text.isNotEmpty
-                                    ? IconButton(
-                                      icon: const Icon(Icons.clear, size: 20),
-                                      onPressed: _clearStart,
-                                    )
-                                    : null,
-                          ),
-                        ),
-                        const Divider(),
-                        // --- DESTINATION INPUT ---
-                        TextField(
-                          controller: _destController,
-                          onChanged: (val) => _onSearchChanged(val, false),
-                          decoration: InputDecoration(
-                            icon: const Icon(
-                              Icons.location_on,
-                              color: Colors.red,
-                            ),
-                            labelText: "Where to?",
-                            border: InputBorder.none,
-                            isDense: true,
-                            suffixIcon:
-                                _destController.text.isNotEmpty
-                                    ? IconButton(
-                                      icon: const Icon(Icons.clear, size: 20),
-                                      onPressed: _clearMap,
-                                    )
-                                    : null,
-                          ),
-                        ),
-                      ],
+                  // --- START LOCATION INPUT ---
+                  TextField(
+                    controller: _startController,
+                    onChanged: (val) => _onSearchChanged(val, true),
+                    decoration: InputDecoration(
+                      icon: const Icon(Icons.my_location, color: Colors.green),
+                      labelText: "Start Location",
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.all(12),
+                      suffixIcon:
+                          _startController.text.isNotEmpty
+                              ? IconButton(
+                                icon: const Icon(Icons.clear, size: 20),
+                                onPressed: _clearStart,
+                              )
+                              : null,
                     ),
                   ),
 
-                  // --- SEARCH SUGGESTIONS LIST ---
-                  if (_suggestions.isNotEmpty)
-                    Container(
-                      constraints: const BoxConstraints(maxHeight: 300),
-                      color: Colors.white,
-                      child: ListView.separated(
+                  // --- SWAP BUTTON & DIVIDER ---
+                  Row(
+                    children: [
+                      const Expanded(child: Divider(height: 1)),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.swap_vert_circle,
+                          color: Colors.blue,
+                          size: 28,
+                        ),
+                        onPressed: _swapLocations,
+                        tooltip: "Swap Locations",
                         padding: EdgeInsets.zero,
-                        shrinkWrap: true,
-                        itemCount: _suggestions.length,
-                        separatorBuilder: (ctx, i) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final item = _suggestions[index];
-                          return ListTile(
-                            dense: true,
-                            leading: const Icon(
-                              Icons.place,
-                              size: 20,
-                              color: Colors.grey,
-                            ),
-                            title: Text(
-                              item['display_name'],
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                            onTap: () => _selectSuggestion(item),
-                          );
-                        },
+                        constraints: const BoxConstraints(),
                       ),
+                      const Expanded(child: Divider(height: 1)),
+                    ],
+                  ),
+
+                  // --- DESTINATION INPUT ---
+                  TextField(
+                    controller: _destController,
+                    onChanged: (val) => _onSearchChanged(val, false),
+                    decoration: InputDecoration(
+                      icon: const Icon(Icons.location_on, color: Colors.red),
+                      labelText: "Where to?",
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.all(12),
+                      suffixIcon:
+                          _destController.text.isNotEmpty
+                              ? IconButton(
+                                icon: const Icon(Icons.clear, size: 20),
+                                onPressed: _clearMap,
+                              )
+                              : null,
                     ),
+                  ),
                 ],
               ),
             ),
           ),
+
+          // --- SEARCH SUGGESTIONS ---
+          if (_suggestions.isNotEmpty)
+            Positioned(
+              top: 190, // Positioned below the main card
+              left: 20,
+              right: 20,
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 250),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black26, blurRadius: 10),
+                  ],
+                ),
+                child: ListView.separated(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: _suggestions.length,
+                  separatorBuilder: (ctx, i) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final item = _suggestions[index];
+                    return ListTile(
+                      dense: true,
+                      leading: const Icon(
+                        Icons.place,
+                        size: 20,
+                        color: Colors.grey,
+                      ),
+                      title: Text(
+                        item['display_name'],
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      onTap: () => _selectSuggestion(item),
+                    );
+                  },
+                ),
+              ),
+            ),
 
           // --- ROUTE INFO CARD ---
           if (isRouteInfoReady)
@@ -790,11 +828,14 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.directions_car, color: Colors.white, size: 24),
+                      const Icon(
+                        Icons.directions_car,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          // Show Distance and Duration
                           _statusMessage,
                           style: const TextStyle(
                             color: Colors.white,
@@ -803,7 +844,6 @@ class _MapScreenState extends State<MapScreen> {
                           ),
                         ),
                       ),
-                      // Route Options Button
                       if (_routeOptions.length > 1)
                         TextButton(
                           onPressed: _showRouteOptions,
@@ -827,11 +867,10 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ),
+
+          // --- GPS BUTTON ---
           Positioned(
-            bottom:
-                isRouteInfoReady
-                    ? 120
-                    : 30, // Adjust height based on whether the route info is visible
+            bottom: isRouteInfoReady ? 120 : 30,
             right: 20,
             child: FloatingActionButton(
               onPressed: _getCurrentLocation,
@@ -839,6 +878,8 @@ class _MapScreenState extends State<MapScreen> {
               child: const Icon(Icons.gps_fixed, color: Colors.black),
             ),
           ),
+
+          // --- LOADING OVERLAY ---
           if (_isLoading)
             Container(
               color: Colors.black26,
