@@ -17,6 +17,8 @@ pubspec.lock
 **/GeneratedPluginRegistrant.*
 ios/Flutter/ephemeral/
 macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
+
 
 # ============================================
 # ANDROID
